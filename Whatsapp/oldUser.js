@@ -1,6 +1,6 @@
 const sendMsgs = require("./sendMessages");
 const templates = require("./Templates");
-const mainMenu = require("./mainMenu");
+const mainMenu = require("./mainMenu/mainMenu");
 const axios = require("axios").default;
 
 exports.receiveMsg = (message, accounts) => {

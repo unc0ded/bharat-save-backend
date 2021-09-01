@@ -5,7 +5,7 @@ exports.sendMsg = async (data) => {
   await axios
     .post(`https://waba-sandbox.360dialog.io/v1/messages`, data, {
       headers: {
-        "D360-API-Key": "9k8w3o_sandbox",
+        "D360-API-Key": "Pr16rc_sandbox",
         "Content-Type": "application/json",
       },
     })

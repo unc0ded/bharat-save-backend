@@ -2,7 +2,7 @@ const templates = require("./Templates");
 const axios = require("axios").default;
 const newUser1 = require("./newUser1");
 const welcome = require("./welcome");
-const mainMenu = require("./mainMenu");
+const mainMenu = require("./mainMenu/mainMenu");
 var accounts = {};
 
 exports.receiveMsg = async (req, res, next) => {
