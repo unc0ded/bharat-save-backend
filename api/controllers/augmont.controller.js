@@ -37,7 +37,7 @@ exports.augmontToken = token;
 
 exports.buyList = async (req, res, next) => {
   try {
-    var config = {
+    const config = {
       method: "get",
       url: `${process.env.AUGMONT_URL}/merchant/v1/${req.body.uniqueCode}/buy`,
       headers: {
@@ -62,7 +62,7 @@ exports.buyList = async (req, res, next) => {
 
 exports.sellList = async (req, res, next) => {
   try {
-    var config = {
+    const config = {
       method: "get",
       url: `${process.env.AUGMONT_URL}/merchant/v1/${req.body.uniqueCode}/sell`,
       headers: {
@@ -87,14 +87,14 @@ exports.sellList = async (req, res, next) => {
 
 exports.createUser = async (req, res, next) => {
   const unique_id = nanoid();
-  var data = new FormData();
+  const data = new FormData();
   data.append("mobileNumber", req.body.mobileNumber);
   data.append("emailId", req.body.emailId);
   data.append("uniqueId", unique_id);
   data.append("userName", req.body.userName);
   data.append("userPincode", req.body.userPincode);
 
-  var config = {
+  const config = {
     method: "post",
     url: `${process.env.AUGMONT_URL}/merchant/v1/users`,
     headers: {
@@ -257,74 +257,72 @@ exports.buyGold = async (req, res, next) => {
   if (authHeader) {
     const usertoken = authHeader.split(" ")[1];
 
-    jwt.verify(usertoken, process.env.TOKEN_SECRET, (err, user) => {
+    jwt.verify(usertoken, process.env.TOKEN_SECRET, async (err, user) => {
       if (err) {
         return res.sendStatus(403);
-      } else {
-        if (req.body.amount != null && req.body.quantity != null) {
+      }
+
+      if (req.body.amount != null && req.body.quantity != null) {
+        return res.status(400).json({
+          error: "Only one of amount or quantity is allowed",
+        });
+      }
+
+      const uniqueId = user._id;
+      try {
+        const data = new FormData();
+        data.append("lockPrice", req.body.buyPrice);
+        data.append("metalType", "gold");
+        data.append("merchantTransactionId", merchantTransactionId);
+        data.append("uniqueId", uniqueId);
+        data.append("blockId", req.body.blockId);
+
+        if (req.body.amount != null) {
+          data.append("amount", req.body.amount);
+        } else if (req.body.quantity != null) {
+          data.append("quantity", req.body.quantity);
+        } else {
           return res.status(400).json({
-            error: "Only one of amount or quantity is allowed",
+            error: "Amount or quantity is required",
           });
         }
 
-        const uniqueId = user._id;
-        try {
-          var data = new FormData();
-          data.append("lockPrice", req.body.buyPrice);
-          data.append("metalType", "gold");
-          data.append("merchantTransactionId", merchantTransactionId);
-          data.append("uniqueId", uniqueId);
-          data.append("blockId", req.body.blockId);
-
-          if (req.body.amount != null) {
-            data.append("amount", req.body.amount);
-          } else if (req.body.quantity != null) {
-            data.append("quantity", req.body.quantity);
-          } else {
-            return res.status(400).json({
-              error: "Amount or quantity is required",
-            });
+        const response = await axios.post(`${process.env.AUGMONT_URL}/merchant/v1/buy`, data, {
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+            ...data.getHeaders()
           }
+        });
 
-          var config = {
-            method: "post",
-            url: `${process.env.AUGMONT_URL}/merchant/v1/buy`,
-            headers: {
-              Accept: "application/json",
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-              ...data.getHeaders(),
-            },
-            data: data,
-          };
+        if (response.status == 200) {
+          const id = response.data.result.data.uniqueId;
+          const newBuy = new Buy(response.data.result.data);
+          await newBuy.save();
+          const user = await User.findById(id).exec();
+          const newAmount = (
+            parseFloat(user.totalAmount) +
+            parseFloat(response.data.result.data.preTaxAmount)
+          ).toFixed(2);
 
-          axios(config)
-            .then(async function (response) {
-              const id = response.data.result.data.uniqueId;
-              const newBuy = new Buy(response.data.result.data);
-              await newBuy.save();
-              const user = await User.findById(id).exec();
-              const newAmount = (
-                parseFloat(user.totalAmount) +
-                parseFloat(response.data.result.data.preTaxAmount)
-              ).toFixed(2);
+          await User.findByIdAndUpdate(id, {
+            totalAmount: newAmount,
+            goldBalance: response.data.result.data.goldBalance,
+          });
 
-              await User.findByIdAndUpdate(id, {
-                totalAmount: newAmount,
-                goldBalance: response.data.result.data.goldBalance,
-              });
-              res.status(200).json({
-                totalAmount: newAmount,
-                goldBalance: response.data.result.data.goldBalance,
-              });
-            })
-            .catch(function (error) {
-              console.log(error);
-            });
-        } catch (error) {
-          next(error);
-          console.log(error);
+          res.status(200).json({
+            totalAmount: newAmount,
+            goldBalance: response.data.result.data.goldBalance,
+          });
+        } else {
+          res.status(400).json({
+            error: response.data.message,
+          });
         }
+      } catch (error) {
+        next(error);
+        console.log(error);
       }
     });
   } else {
@@ -343,56 +341,71 @@ exports.sellGold = async (req, res, next) => {
     jwt.verify(token, process.env.TOKEN_SECRET, (err, user) => {
       if (err) {
         return res.sendStatus(403);
-      } else {
-        const uniqueId = user._id;
-        try {
-          var data = new FormData();
-          data.append("uniqueId", uniqueId);
-          data.append("mobileNumber", req.body.mobileNumber);
-          data.append("lockPrice", req.body.lockPrice);
-          data.append("blockId", req.body.blockId);
-          data.append("metalType", "gold");
+      }
+
+      if (req.body.amount != null && req.body.quantity != null) {
+        return res.status(400).json({
+          error: "Only one of amount or quantity is allowed",
+        });
+      }
+
+      const uniqueId = user._id;
+      try {
+        const data = new FormData();
+        data.append("uniqueId", uniqueId);
+        data.append("mobileNumber", req.body.mobileNumber);
+        data.append("lockPrice", req.body.lockPrice);
+        data.append("blockId", req.body.blockId);
+        data.append("metalType", "gold");
+        data.append("merchantTransactionId", merchantTransactionId);
+        data.append("userBank[userBankId]", req.body.userBankId);
+
+        if (req.body.amount != null) {
           data.append("amount", req.body.amount);
-          data.append("merchantTransactionId", merchantTransactionId);
-          data.append("userBank[userBankId]", req.body.userBankId);
-
-          var config = {
-            method: "post",
-            url: `${process.env.AUGMONT_URL}/merchant/v1/sell`,
-            headers: {
-              "Content-Type": "application/json",
-              Accept: "application/json",
-              Authorization: `Bearer ${token}`,
-              ...data.getHeaders(),
-            },
-            data: data,
-          };
-
-          axios(config)
-            .then(async function (response) {
-              const id = response.data.result.data.uniqueId;
-              const newSell = new Sell(response.data.result.data);
-              await newSell.save();
-              const user = await User.findById(id).exec();
-              const newAmount = (
-                parseFloat(user.totalAmount) -
-                parseFloat(response.data.result.data.totalAmount)
-              ).toFixed(2);
-
-              await User.findByIdAndUpdate(id, {
-                totalAmount: newAmount,
-                goldBalance: response.data.result.data.goldBalance,
-              });
-
-              res.status(200).json({ ok: 1 });
-            })
-            .catch(function (error) {
-              console.log(error);
-            });
-        } catch (error) {
-          console.log(error);
-          next(errors);
+        } else if (req.body.quantity != null) {
+          data.append("quantity", req.body.quantity);
+        } else {
+          return res.status(400).json({
+            error: "Amount or quantity is required",
+          });
         }
+
+        const response = await axios.post(`${process.env.AUGMONT_URL}/merchant/v1/sell`, data, {
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+            ...data.getHeaders()
+          }
+        });
+
+        if (response.status === 200) {
+          const id = response.data.result.data.uniqueId;
+          const newSell = new Sell(response.data.result.data);
+          await newSell.save();
+          const user = await User.findById(id).exec();
+          const newAmount = (
+            parseFloat(user.totalAmount) -
+            parseFloat(response.data.result.data.preTaxAmount)
+          ).toFixed(2);
+
+          await User.findByIdAndUpdate(id, {
+            totalAmount: newAmount,
+            goldBalance: response.data.result.data.goldBalance,
+          });
+
+          res.status(200).json({
+            totalAmount: newAmount,
+            goldBalance: response.data.result.data.goldBalance,
+          });
+        } else {
+          res.status(400).json({
+            error: response.data.message
+          });
+        }
+      } catch (error) {
+        console.log(error);
+        next(errors);
       }
     });
   } else {
@@ -413,36 +426,37 @@ exports.bankCreate = async (req, res, next) => {
       } else {
         const uniqueId = user._id;
         try {
-          var data = qs.stringify({
+          const response = await axios.post(`${process.env.AUGMONT_URL}/merchant/v1/users/${uniqueId}/banks`, qs.stringify({
             accountNumber: req.body.accountNumber,
             accountName: req.body.accountName,
-            ifscCode: req.body.ifscCode,
-          });
-          var config = {
-            method: "post",
-            url: `${process.env.AUGMONT_URL}/merchant/v1/users/${uniqueId}/banks`,
+            ifscCode: req.body.ifscCode
+          }), {
             headers: {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/x-www-form-urlencoded",
-            },
-            data: data,
-          };
+            }
+          });
 
-          axios(config)
-            .then(async function (response) {
-              const id = response.data.result.data.uniqueId;
-              const filter = { _id: id };
-              const update = {
-                $push: { userBanks: response.data.result.data },
-              };
+          if (response.status == 200) {
+            const id = response.data.result.data.uniqueId;
+            const update = {
+              $push: { userBanks: response.data.result.data },
+            };
 
-              await User.findOneAndUpdate(filter, update);
+            await User.findOneAndUpdate({ _id: id }, update);
 
-              res.status(200).json({ ok: 1 });
-            })
-            .catch(function (error) {
-              console.log(error);
+            res.status(200).json({
+              userBankId: response.data.result.data.userBankId,
+              uniqueId: response.data.result.data.uniqueId,
+              accountNumber: response.data.result.data.accountNumber,
+              accountName: response.data.result.data.accountName,
+              ifscCode: response.data.result.data.ifscCode
             });
+          } else {
+            res.status(400).json({
+              error: response.data.message
+            });
+          }
         } catch (error) {
           console.log(error);
           next(error);

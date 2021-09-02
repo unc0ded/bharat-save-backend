@@ -196,7 +196,6 @@ exports.createSubscription = async (req, res, next) => {
                 }
             });
             if (response.status === 200 && response.data.body.resultInfo.resultStatus === 'S') {
-                console.log(response.data);
                 const checksum = response.data.head.signature;
                 const isValid = await Paytm.verifySignature(JSON.stringify(response.data.body), process.env.PAYTM_KEY, checksum);
                 if (isValid) {
