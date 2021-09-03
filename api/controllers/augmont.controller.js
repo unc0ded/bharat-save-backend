@@ -316,6 +316,7 @@ exports.buyGold = async (req, res, next) => {
               res.status(200).json({
                 totalAmount: newAmount,
                 goldBalance: response.data.result.data.goldBalance,
+                OK: 1,
               });
             })
             .catch(function (error) {
