@@ -343,7 +343,7 @@ exports.sellGold = async (req, res, next) => {
   if (authHeader) {
     const token = authHeader.split(" ")[1];
 
-    jwt.verify(token, process.env.TOKEN_SECRET, (err, user) => {
+    jwt.verify(token, process.env.TOKEN_SECRET, async (err, user) => {
       if (err) {
         return res.sendStatus(403);
       }
@@ -414,7 +414,7 @@ exports.sellGold = async (req, res, next) => {
         }
       } catch (error) {
         console.log(error);
-        next(errors);
+        next(error);
       }
     });
   } else {
@@ -429,7 +429,7 @@ exports.bankCreate = async (req, res, next) => {
   if (authHeader) {
     const token = authHeader.split(" ")[1];
 
-    jwt.verify(token, process.env.TOKEN_SECRET, (err, user) => {
+    jwt.verify(token, process.env.TOKEN_SECRET, async (err, user) => {
       if (err) {
         return res.sendStatus(403);
       } else {
