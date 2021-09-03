@@ -297,6 +297,9 @@ exports.buyGold = async (req, res, next) => {
               Authorization: `Bearer ${token}`,
               ...data.getHeaders(),
             },
+            validateStatus: (status) => {
+              return status < 500;
+            }
           }
         );
 
@@ -341,9 +344,9 @@ exports.sellGold = async (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (authHeader) {
-    const token = authHeader.split(" ")[1];
+    const userToken = authHeader.split(" ")[1];
 
-    jwt.verify(token, process.env.TOKEN_SECRET, async (err, user) => {
+    jwt.verify(userToken, process.env.TOKEN_SECRET, async (err, user) => {
       if (err) {
         return res.sendStatus(403);
       }
@@ -385,6 +388,9 @@ exports.sellGold = async (req, res, next) => {
               Authorization: `Bearer ${token}`,
               ...data.getHeaders(),
             },
+            validateStatus: (status) => {
+              return status < 500;
+            }
           }
         );
 
@@ -427,9 +433,9 @@ exports.bankCreate = async (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (authHeader) {
-    const token = authHeader.split(" ")[1];
+    const userToken = authHeader.split(" ")[1];
 
-    jwt.verify(token, process.env.TOKEN_SECRET, async (err, user) => {
+    jwt.verify(userToken, process.env.TOKEN_SECRET, async (err, user) => {
       if (err) {
         return res.sendStatus(403);
       } else {
@@ -445,8 +451,11 @@ exports.bankCreate = async (req, res, next) => {
             {
               headers: {
                 Authorization: `Bearer ${token}`,
-                "Content-Type": "application/x-www-form-urlencoded",
+                "Content-Type": "application/x-www-form-urlencoded"
               },
+              validateStatus: (status) => {
+                return status < 500;
+              }
             }
           );
 
