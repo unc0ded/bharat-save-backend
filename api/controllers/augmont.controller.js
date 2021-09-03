@@ -137,6 +137,7 @@ exports.createUser = async (req, res, next) => {
                   ok: 1,
                   token: appToken,
                   userData: {
+                    _id: unique_id,
                     mobileNumber: req.body.mobileNumber,
                     emailId: req.body.emailId,
                     userName: req.body.userName,
@@ -177,6 +178,7 @@ exports.login = async (req, res) => {
           res.json({
             token: apptoken,
             userData: {
+              _id: foundUser._id,
               mobileNumber: foundUser.mobileNumber,
               emailId: foundUser.emailId,
               userName: foundUser.userName,
