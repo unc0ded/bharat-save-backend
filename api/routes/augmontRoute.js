@@ -21,4 +21,6 @@ router.get("/selllist", controller.sellList);
 // check if authenticated
 router.get("/isAuth", controller.isAuth);
 
+router.get("/products", controller.productList);
+
 module.exports = router;

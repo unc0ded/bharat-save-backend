@@ -85,6 +85,102 @@ exports.sellList = async (req, res, next) => {
   }
 };
 
+exports.productList = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader) {
+    try {
+      const response = await axios.get(`${process.env.AUGMONT_URL}/merchant/v1/products`, {
+        params: {
+          count: 30,
+          page: 1
+        },
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        }
+      });
+  
+      if (response.status === 200) {
+        const goldCoinList = response.data.result.data.filter(item => item.jewelleryType === 'coin' && item.metalType === 'gold');
+        goldCoinList.sort((a, b) => parseFloat(a.productWeight) - parseFloat(b.productWeight));
+        const finalResult = goldCoinList.map(({ redeemWeight, metalType, purity, jewelleryType, productSize, basePrice, description, status, productImages, ...item }) => item);
+  
+        return res.status(200).json(finalResult);
+      }
+
+      res.sendStatus(500);
+    } catch (error) {
+      console.log(error);
+      next(error);
+    }
+  }
+
+  const userToken = authHeader.split(" ")[1];
+
+  jwt.verify(userToken, process.env.TOKEN_SECRET, async (err, user) => {
+    if (err) {
+      return res.sendStatus(403);
+    }
+    
+    const id = user._id;
+    try {
+      const response = await axios.get(`${process.env.AUGMONT_URL}/merchant/v1/products`, {
+        params: {
+          count: 30,
+          page: 1
+        },
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        }
+      });
+  
+      if (response.status === 200) {
+        const user = await User.findById(id);
+        const goldBalance = parseFloat(user.goldBalance);
+
+        const goldCoinList = response.data.result.data.filter(item => item.jewelleryType === 'coin' && item.metalType === 'gold' && parseFloat(item.productWeight) <= goldBalance);
+        goldCoinList.sort((a, b) => parseFloat(a.productWeight) - parseFloat(b.productWeight));
+        const finalResult = goldCoinList.map(({ redeemWeight, metalType, purity, jewelleryType, productSize, basePrice, description, status, productImages, ...item }) => {
+          let makingCharge = 0;
+          switch (parseFloat(item.productWeight)) {
+            case 0.1: makingCharge = 200;
+              break;
+            case 0.5: makingCharge = 300;
+              break;
+            case 1: makingCharge = 350;
+              break;
+            case 2: makingCharge = 400;
+              break;
+            case 5: makingCharge = 500;
+              break;
+            case 8: makingCharge = 650;
+              break;
+            case 10: makingCharge = 800;
+              break;
+            case 20: makingCharge = 1100;
+              break;
+            case 50: makingCharge = 2100;
+              break;
+            default: makingCharge = null;
+              break;
+          }
+
+          return { ...item, makingCharges: makingCharge.toString() };
+        });
+  
+        res.status(200).json(finalResult);
+      }
+    } catch (error) {
+      console.log(error);
+      next(error);
+    }
+  });
+};
+
 exports.createUser = async (req, res, next) => {
   const unique_id = nanoid();
   const data = new FormData();
