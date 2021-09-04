@@ -6,6 +6,7 @@ const jwt = require("jsonwebtoken");
 const Buy = require("../models/Buy");
 const qs = require("qs");
 const Sell = require("../models/Sell");
+const Order = require("../models/Order");
 
 const token =
   "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIzIiwianRpIjoiMTE1Njg2ZGRmNTBmMzlmZjdlZGQ5OGMxMDA2NmE5YmUzMzkyMmQ5NDg4Yjc0NjMxNGE2ZGI5MTZjNjU2ZGRiNzc1ZWI3ODQzYjQyMGJhODIiLCJpYXQiOjE2Mjg2MTMwMTEsIm5iZiI6MTYyODYxMzAxMSwiZXhwIjoxNjMxMjA1MDExLCJzdWIiOiI1MDAwMDE0NSIsInNjb3BlcyI6W119.L34DlHj6eRbykApwSBUTR5nRGAc90T_369xXsBa0chZRZFkrOTYKvh1eWwoUm4UKNUhz3pb5h4qqLcgTbl_icoM5hZLCIj3eaHN9Mzuqnu2QI0u3Zr8R-XMXLD99Bw-0wSfBjkT2YTMt35-z0CxmmjYvkhZcHU1eL_XZIccsaFR6GjzB6J3kyVJKver2o_We93x9a_C8_RPbAe25ha3bnlqTqd8PKtC-CYxYQTRYgo8r6zSO-QoBpmeF0i-7ItZth8WyRHvYCJ8YxeGBOoEl9hSt7-ZCznHPk1ew52w5YigEBJXosYeN-Kqvu8kOoLiF3p6zKfWJmo7h8aWGA6cm6zKkH9kv4Y1mX3Dx8J1vx5320O4I_HuvqQCU3sx1Y4382xyWLj3aFkhWyce8dfD7ZKYpbZbm5lc7x2R8eCg4CVznZEDQX98cBDso4RzWGxbt16_-fco2CS5tznwMJqyaqlquHnv8GDrRzuj7QT_Zx9ih7zk87HxNXEeRJT6wTpEYMoSYAhPyXSHG-XiNBRoQYueh9DGPVMTHYg7TtQsWtfwO3kJvh398rpk9BkPfgSr2QCAdbieNE-GVs0-0cuvjKFSU5qE1LYESHK2rxAu-TSVSVO5yN50byHBBt2_85P9A_7O3lILTtsa6ZvtRu7TwMvQyrIQ0mS_Kt3ysjJ874lA";
@@ -140,6 +141,9 @@ exports.productList = async (req, res, next) => {
   
       if (response.status === 200) {
         const user = await User.findById(id);
+        if (!user) {
+          return res.sendStatus(404);
+        }
         const goldBalance = parseFloat(user.goldBalance);
 
         const goldCoinList = response.data.result.data.filter(item => item.jewelleryType === 'coin' && item.metalType === 'gold' && parseFloat(item.productWeight) <= goldBalance);
@@ -174,6 +178,99 @@ exports.productList = async (req, res, next) => {
   
         res.status(200).json(finalResult);
       }
+    } catch (error) {
+      console.log(error);
+      next(error);
+    }
+  });
+};
+
+exports.orderProduct = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader) {
+    return res.sendStatus(401);
+  }
+
+  const userToken = authHeader.split(" ")[1];
+
+  jwt.verify(userToken, process.env.TOKEN_SECRET, async (err, decoded) => {
+    if (err) {
+      return res.sendStatus(403);
+    }
+
+    const id = decoded._id;
+    const merchantTransactionId = nanoid();
+
+    try {
+      const user = await User.findById(id);
+      if (!user) {
+        return res.sendStatus(404);
+      }
+
+      const availabilityCheckResponse = await axios.get(`${process.env.AUGMONT_URL}/merchant/v1/products/${req.body.productId}`, {
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        validateStatus: status => status < 500
+      });
+
+      if (availabilityCheckResponse.status !== 200) {
+        return res.status(400).json({
+          error: availabilityCheckResponse.data.message
+        });
+      }
+      if (availabilityCheckResponse.data.result.data.stock < parseInt(req.body.quantity)) {
+        return res.status(500).json({
+          error: 'Not enough stock'
+        });
+      }
+      const productName = availabilityCheckResponse.data.result.data.name.split(' (')[0];
+
+      const formData = new FormData();
+      formData.append('uniqueId', id);
+      formData.append('mobileNumber', user.mobileNumber);
+      formData.append('merchantTransactionId', merchantTransactionId);
+      formData.append('user[shipping][addressId]', req.body.addressId);
+      formData.append('product[0][sku]', req.body.productId);
+      formData.append('product[0][quantity]', '1');
+
+      const response = await axios.post(`${process.env.AUGMONT_URL}/merchant/v1/order`, formData, {
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+          ...formData.getHeaders()
+        },
+        validateStatus: status => status < 500
+      });
+      
+      if (response.status === 200) {
+        const order = await Order.create({
+          uniqueId: id,
+          merchantTransactionId: response.data.result.data.merchantTransactionId,
+          orderId: response.data.result.data.orderId,
+          shippingCharges: response.data.result.data.shippingCharges,
+          sku: req.body.productId,
+          productName,
+          shippingAddressId: req.body.addressId
+        });
+
+        user.goldBalance = response.data.result.data.goldBalance;
+        await user.save();
+
+        return res.status(200).json({
+          orderDetails: order,
+          goldBalance: response.data.result.data.goldBalance,
+          message: response.data.message
+        });
+      }
+
+      res.status(400).json({
+        error: response.data.message
+      });
     } catch (error) {
       console.log(error);
       next(error);
@@ -395,9 +492,7 @@ exports.buyGold = async (req, res, next) => {
               Authorization: `Bearer ${token}`,
               ...data.getHeaders(),
             },
-            validateStatus: (status) => {
-              return status < 500;
-            }
+            validateStatus: status => status < 500
           }
         );
 
@@ -486,9 +581,7 @@ exports.sellGold = async (req, res, next) => {
               Authorization: `Bearer ${token}`,
               ...data.getHeaders(),
             },
-            validateStatus: (status) => {
-              return status < 500;
-            }
+            validateStatus: status => status < 500
           }
         );
 

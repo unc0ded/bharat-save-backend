@@ -20,7 +20,9 @@ router.post("/sell", controller.sellGold);
 router.get("/selllist", controller.sellList);
 // check if authenticated
 router.get("/isAuth", controller.isAuth);
-
+// Fetch augmont gold product list
 router.get("/products", controller.productList);
+// Place order for gold product
+router.post("/order", controller.orderProduct);
 
 module.exports = router;
