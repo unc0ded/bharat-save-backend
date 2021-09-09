@@ -629,55 +629,107 @@ exports.bankCreate = async (req, res, next) => {
     jwt.verify(userToken, process.env.TOKEN_SECRET, async (err, user) => {
       if (err) {
         return res.sendStatus(403);
-      } else {
-        const uniqueId = user._id;
-        try {
-          const response = await axios.post(
-            `${process.env.AUGMONT_URL}/merchant/v1/users/${uniqueId}/banks`,
-            qs.stringify({
-              accountNumber: req.body.accountNumber,
-              accountName: req.body.accountName,
-              ifscCode: req.body.ifscCode,
-            }),
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/x-www-form-urlencoded"
-              },
-              validateStatus: (status) => {
-                return status < 500;
-              }
-            }
-          );
+      }
 
-          if (response.status == 200) {
-            const id = response.data.result.data.uniqueId;
-            const update = {
-              $push: { userBanks: response.data.result.data },
-            };
+      const uniqueId = user._id;
+      try {
+        const response = await axios.post(`${process.env.AUGMONT_URL}/merchant/v1/users/${uniqueId}/banks`, qs.stringify({
+          accountNumber: req.body.accountNumber,
+          accountName: req.body.accountName,
+          ifscCode: req.body.ifscCode,
+        }), {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/x-www-form-urlencoded"
+          },
+          validateStatus: status => status < 500
+        });
 
-            await User.findOneAndUpdate({ _id: id }, update);
+        if (response.status == 200) {
+          const id = response.data.result.data.uniqueId;
+          const update = {
+            $push: { userBanks: response.data.result.data },
+          };
 
-            res.status(200).json({
-              userBankId: response.data.result.data.userBankId,
-              uniqueId: response.data.result.data.uniqueId,
-              accountNumber: response.data.result.data.accountNumber,
-              accountName: response.data.result.data.accountName,
-              ifscCode: response.data.result.data.ifscCode,
-            });
-          } else {
-            res.status(400).json({
-              error: response.data.message,
-            });
-          }
-        } catch (error) {
-          console.log(error);
-          next(error);
+          await User.findOneAndUpdate({ _id: id }, update);
+
+          res.status(200).json({
+            userBankId: response.data.result.data.userBankId,
+            uniqueId: response.data.result.data.uniqueId,
+            accountNumber: response.data.result.data.accountNumber,
+            accountName: response.data.result.data.accountName,
+            ifscCode: response.data.result.data.ifscCode,
+          });
+        } else {
+          res.status(400).json({
+            error: response.data.message,
+          });
         }
+      } catch (error) {
+        console.log(error);
+        next(error);
       }
     });
   } else {
     res.sendStatus(401);
     next();
   }
+};
+
+exports.createAddress = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader) {
+    return res.sendStatus(401);
+  }
+
+  const userToken = authHeader.split(" ")[1];
+
+  jwt.verify(userToken, process.env.TOKEN_SECRET, async (err, decoded) => {
+    if (err) {
+      return res.sendStatus(403);
+    }
+
+    const id = decoded._id;
+    
+    try {
+      const response = await axios.post(`${process.env.AUGMONT_URL}/merchant/v1/users/${id}/address`, qs.stringify({
+        name: req.body.name,
+        mobileNumber: req.body.mobileNumber,
+        address: req.body.address,
+        pincode: req.body.pincode
+      }), {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        validateStatus: status => status < 500
+      });
+
+      if (response.status == 200) {
+        const updatedUser = await User.findByIdAndUpdate(id, {
+          $push: { addresses: {
+            addressId: response.data.result.data.userAddressId,
+            uniqueId: id,
+            name: req.body.name,
+            mobileNumber: req.body.mobileNumber,
+            addressType: req.body.label,
+            address: req.body.address,
+            state: response.data.result.data.stateName,
+            city: response.data.result.data.cityName,
+            pincode: req.body.pincode
+          } }
+        }, { new: true });
+
+        return res.status(200).json(updatedUser.addresses.filter(address => address.addressId == response.data.result.data.userAddressId));
+      }
+
+      res.status(400).json({
+        error: response.data.message,
+      });
+    } catch (error) {
+      console.log(error);
+      next(error);
+    }
+  });
 };

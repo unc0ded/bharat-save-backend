@@ -24,5 +24,7 @@ router.get("/isAuth", controller.isAuth);
 router.get("/products", controller.productList);
 // Place order for gold product
 router.post("/order", controller.orderProduct);
+// Create user address
+router.post("/address", controller.createAddress)
 
 module.exports = router;

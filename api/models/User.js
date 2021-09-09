@@ -61,6 +61,19 @@ const userSchema = new mongoose.Schema({
       ifscCode: { type: String },
       status: { type: String },
     },
+  ],
+  addresses: [
+    {
+      addressId: { type: String },
+      uniqueId: { type: String },
+      addressType: { type: String },
+      name: { type: String },
+      mobileNumber: { type: String },
+      address: { type: String },
+      state: { type: String },
+      city: { type: String },
+      pincode: { type: String }
+    },
   ]
 });
 
