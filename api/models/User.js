@@ -9,6 +9,9 @@ const userSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  referralCode: {
+    type: String,
+  },
   emailId: {
     type: String,
     required: true,
@@ -27,28 +30,33 @@ const userSchema = new mongoose.Schema({
   },
   totalAmount: {
     type: String,
-    default: "0"
+    default: "0",
   },
   goldBalance: {
     type: String,
-    default: "0"
+    default: "0",
   },
   activePlans: [
     {
       subscriptionId: {
         type: String,
-        required: true
+        required: true,
       },
       planName: {
         type: String,
-        enum: ["Round Up", "Daily Savings", "Weekly Savings", "Monthly Savings"],
-        required: true
+        enum: [
+          "Round Up",
+          "Daily Savings",
+          "Weekly Savings",
+          "Monthly Savings",
+        ],
+        required: true,
       },
       active: {
         type: Boolean,
-        default: false
-      }
-    }
+        default: false,
+      },
+    },
   ],
   userBanks: [
     {
@@ -72,9 +80,9 @@ const userSchema = new mongoose.Schema({
       address: { type: String },
       state: { type: String },
       city: { type: String },
-      pincode: { type: String }
+      pincode: { type: String },
     },
-  ]
+  ],
 });
 
 module.exports = mongoose.model("User", userSchema);

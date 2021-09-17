@@ -37,53 +37,74 @@ exports.augmontToken = token;
 //sanskar's uniquecode =e505e888-ca94-429f-a2e9-52b97b93191f
 
 exports.buyList = async (req, res, next) => {
-  try {
-    const config = {
-      method: "get",
-      url: `${process.env.AUGMONT_URL}/merchant/v1/${req.body.uniqueCode}/buy`,
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    };
+  const authHeader = req.headers.authorization;
+  const userToken = authHeader.split(" ")[1];
 
-    axios(config)
-      .then(function (response) {
-        res.json(response.data.result.data);
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
-  } catch (error) {
-    console.log(error);
-    next();
-  }
+  jwt.verify(userToken, process.env.TOKEN_SECRET, async (err, user) => {
+    if (err) {
+      return res.sendStatus(403);
+    }
+
+    const uniqueCode = user._id;
+
+    try {
+      const config = {
+        method: "get",
+        url: `${process.env.AUGMONT_URL}/merchant/v1/${uniqueCode}/buy`,
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      };
+
+      axios(config)
+        .then(function (response) {
+          res.json(response.data.result.data);
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+    } catch (error) {
+      console.log(error);
+      next();
+    }
+  });
 };
 
 exports.sellList = async (req, res, next) => {
-  try {
-    const config = {
-      method: "get",
-      url: `${process.env.AUGMONT_URL}/merchant/v1/${req.body.uniqueCode}/sell`,
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    };
+  const authHeader = req.headers.authorization;
+  const userToken = authHeader.split(" ")[1];
 
-    axios(config)
-      .then(function (response) {
-        res.json(response.data.result.data);
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
-  } catch (error) {
-    console.log(error);
-    next();
-  }
+  jwt.verify(userToken, process.env.TOKEN_SECRET, async (err, user) => {
+    if (err) {
+      return res.sendStatus(403);
+    }
+
+    const uniqueCode = user._id;
+    try {
+      const config = {
+        method: "get",
+        url: `${process.env.AUGMONT_URL}/merchant/v1/${uniqueCode}/sell`,
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      };
+
+      axios(config)
+        .then(function (response) {
+          res.json(response.data.result.data);
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+    } catch (error) {
+      console.log(error);
+      next();
+    }
+  });
 };
 
 exports.productList = async (req, res, next) => {
@@ -91,23 +112,43 @@ exports.productList = async (req, res, next) => {
 
   if (!authHeader) {
     try {
-      const response = await axios.get(`${process.env.AUGMONT_URL}/merchant/v1/products`, {
-        params: {
-          count: 30,
-          page: 1
-        },
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
+      const response = await axios.get(
+        `${process.env.AUGMONT_URL}/merchant/v1/products`,
+        {
+          params: {
+            count: 30,
+            page: 1,
+          },
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         }
-      });
-  
+      );
+
       if (response.status === 200) {
-        const goldCoinList = response.data.result.data.filter(item => item.jewelleryType === 'coin' && item.metalType === 'gold');
-        goldCoinList.sort((a, b) => parseFloat(a.productWeight) - parseFloat(b.productWeight));
-        const finalResult = goldCoinList.map(({ redeemWeight, metalType, purity, jewelleryType, productSize, basePrice, description, status, productImages, ...item }) => item);
-  
+        const goldCoinList = response.data.result.data.filter(
+          (item) => item.jewelleryType === "coin" && item.metalType === "gold"
+        );
+        goldCoinList.sort(
+          (a, b) => parseFloat(a.productWeight) - parseFloat(b.productWeight)
+        );
+        const finalResult = goldCoinList.map(
+          ({
+            redeemWeight,
+            metalType,
+            purity,
+            jewelleryType,
+            productSize,
+            basePrice,
+            description,
+            status,
+            productImages,
+            ...item
+          }) => item
+        );
+
         return res.status(200).json(finalResult);
       }
 
@@ -124,21 +165,24 @@ exports.productList = async (req, res, next) => {
     if (err) {
       return res.sendStatus(403);
     }
-    
+
     const id = user._id;
     try {
-      const response = await axios.get(`${process.env.AUGMONT_URL}/merchant/v1/products`, {
-        params: {
-          count: 30,
-          page: 1
-        },
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
+      const response = await axios.get(
+        `${process.env.AUGMONT_URL}/merchant/v1/products`,
+        {
+          params: {
+            count: 30,
+            page: 1,
+          },
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         }
-      });
-  
+      );
+
       if (response.status === 200) {
         const user = await User.findById(id);
         if (!user) {
@@ -146,36 +190,66 @@ exports.productList = async (req, res, next) => {
         }
         const goldBalance = parseFloat(user.goldBalance);
 
-        const goldCoinList = response.data.result.data.filter(item => item.jewelleryType === 'coin' && item.metalType === 'gold' && parseFloat(item.productWeight) <= goldBalance);
-        goldCoinList.sort((a, b) => parseFloat(a.productWeight) - parseFloat(b.productWeight));
-        const finalResult = goldCoinList.map(({ redeemWeight, metalType, purity, jewelleryType, productSize, basePrice, description, status, productImages, ...item }) => {
-          let makingCharge = 0;
-          switch (parseFloat(item.productWeight)) {
-            case 0.1: makingCharge = 200;
-              break;
-            case 0.5: makingCharge = 300;
-              break;
-            case 1: makingCharge = 350;
-              break;
-            case 2: makingCharge = 400;
-              break;
-            case 5: makingCharge = 500;
-              break;
-            case 8: makingCharge = 650;
-              break;
-            case 10: makingCharge = 800;
-              break;
-            case 20: makingCharge = 1100;
-              break;
-            case 50: makingCharge = 2100;
-              break;
-            default: makingCharge = null;
-              break;
-          }
+        const goldCoinList = response.data.result.data.filter(
+          (item) =>
+            item.jewelleryType === "coin" &&
+            item.metalType === "gold" &&
+            parseFloat(item.productWeight) <= goldBalance
+        );
+        goldCoinList.sort(
+          (a, b) => parseFloat(a.productWeight) - parseFloat(b.productWeight)
+        );
+        const finalResult = goldCoinList.map(
+          ({
+            redeemWeight,
+            metalType,
+            purity,
+            jewelleryType,
+            productSize,
+            basePrice,
+            description,
+            status,
+            productImages,
+            ...item
+          }) => {
+            let makingCharge = 0;
+            switch (parseFloat(item.productWeight)) {
+              case 0.1:
+                makingCharge = 200;
+                break;
+              case 0.5:
+                makingCharge = 300;
+                break;
+              case 1:
+                makingCharge = 350;
+                break;
+              case 2:
+                makingCharge = 400;
+                break;
+              case 5:
+                makingCharge = 500;
+                break;
+              case 8:
+                makingCharge = 650;
+                break;
+              case 10:
+                makingCharge = 800;
+                break;
+              case 20:
+                makingCharge = 1100;
+                break;
+              case 50:
+                makingCharge = 2100;
+                break;
+              default:
+                makingCharge = null;
+                break;
+            }
 
-          return { ...item, makingCharges: makingCharge.toString() };
-        });
-  
+            return { ...item, makingCharges: makingCharge.toString() };
+          }
+        );
+
         res.status(200).json(finalResult);
       }
     } catch (error) {
@@ -208,54 +282,66 @@ exports.orderProduct = async (req, res, next) => {
         return res.sendStatus(404);
       }
 
-      const availabilityCheckResponse = await axios.get(`${process.env.AUGMONT_URL}/merchant/v1/products/${req.body.productId}`, {
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        validateStatus: status => status < 500
-      });
+      const availabilityCheckResponse = await axios.get(
+        `${process.env.AUGMONT_URL}/merchant/v1/products/${req.body.productId}`,
+        {
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          validateStatus: (status) => status < 500,
+        }
+      );
 
       if (availabilityCheckResponse.status !== 200) {
         return res.status(400).json({
-          error: availabilityCheckResponse.data.message
+          error: availabilityCheckResponse.data.message,
         });
       }
-      if (availabilityCheckResponse.data.result.data.stock < parseInt(req.body.quantity)) {
+      if (
+        availabilityCheckResponse.data.result.data.stock <
+        parseInt(req.body.quantity)
+      ) {
         return res.status(500).json({
-          error: 'Not enough stock'
+          error: "Not enough stock",
         });
       }
-      const productName = availabilityCheckResponse.data.result.data.name.split(' (')[0];
+      const productName =
+        availabilityCheckResponse.data.result.data.name.split(" (")[0];
 
       const formData = new FormData();
-      formData.append('uniqueId', id);
-      formData.append('mobileNumber', user.mobileNumber);
-      formData.append('merchantTransactionId', merchantTransactionId);
-      formData.append('user[shipping][addressId]', req.body.addressId);
-      formData.append('product[0][sku]', req.body.productId);
-      formData.append('product[0][quantity]', '1');
+      formData.append("uniqueId", id);
+      formData.append("mobileNumber", user.mobileNumber);
+      formData.append("merchantTransactionId", merchantTransactionId);
+      formData.append("user[shipping][addressId]", req.body.addressId);
+      formData.append("product[0][sku]", req.body.productId);
+      formData.append("product[0][quantity]", "1");
 
-      const response = await axios.post(`${process.env.AUGMONT_URL}/merchant/v1/order`, formData, {
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-          ...formData.getHeaders()
-        },
-        validateStatus: status => status < 500
-      });
-      
+      const response = await axios.post(
+        `${process.env.AUGMONT_URL}/merchant/v1/order`,
+        formData,
+        {
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+            ...formData.getHeaders(),
+          },
+          validateStatus: (status) => status < 500,
+        }
+      );
+
       if (response.status === 200) {
         const order = await Order.create({
           uniqueId: id,
-          merchantTransactionId: response.data.result.data.merchantTransactionId,
+          merchantTransactionId:
+            response.data.result.data.merchantTransactionId,
           orderId: response.data.result.data.orderId,
           shippingCharges: response.data.result.data.shippingCharges,
           sku: req.body.productId,
           productName,
-          shippingAddressId: req.body.addressId
+          shippingAddressId: req.body.addressId,
         });
 
         user.goldBalance = response.data.result.data.goldBalance;
@@ -264,12 +350,12 @@ exports.orderProduct = async (req, res, next) => {
         return res.status(200).json({
           orderDetails: order,
           goldBalance: response.data.result.data.goldBalance,
-          message: response.data.message
+          message: response.data.message,
         });
       }
 
       res.status(400).json({
-        error: response.data.message
+        error: response.data.message,
       });
     } catch (error) {
       console.log(error);
@@ -492,7 +578,7 @@ exports.buyGold = async (req, res, next) => {
               Authorization: `Bearer ${token}`,
               ...data.getHeaders(),
             },
-            validateStatus: status => status < 500
+            validateStatus: (status) => status < 500,
           }
         );
 
@@ -581,7 +667,7 @@ exports.sellGold = async (req, res, next) => {
               Authorization: `Bearer ${token}`,
               ...data.getHeaders(),
             },
-            validateStatus: status => status < 500
+            validateStatus: (status) => status < 500,
           }
         );
 
@@ -633,17 +719,21 @@ exports.bankCreate = async (req, res, next) => {
 
       const uniqueId = user._id;
       try {
-        const response = await axios.post(`${process.env.AUGMONT_URL}/merchant/v1/users/${uniqueId}/banks`, qs.stringify({
-          accountNumber: req.body.accountNumber,
-          accountName: req.body.accountName,
-          ifscCode: req.body.ifscCode,
-        }), {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/x-www-form-urlencoded"
-          },
-          validateStatus: status => status < 500
-        });
+        const response = await axios.post(
+          `${process.env.AUGMONT_URL}/merchant/v1/users/${uniqueId}/banks`,
+          qs.stringify({
+            accountNumber: req.body.accountNumber,
+            accountName: req.body.accountName,
+            ifscCode: req.body.ifscCode,
+          }),
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+            validateStatus: (status) => status < 500,
+          }
+        );
 
         if (response.status == 200) {
           const id = response.data.result.data.uniqueId;
@@ -691,37 +781,54 @@ exports.createAddress = async (req, res, next) => {
     }
 
     const id = decoded._id;
-    
+
     try {
-      const response = await axios.post(`${process.env.AUGMONT_URL}/merchant/v1/users/${id}/address`, qs.stringify({
-        name: req.body.name,
-        mobileNumber: req.body.mobileNumber,
-        address: req.body.address,
-        pincode: req.body.pincode
-      }), {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/x-www-form-urlencoded"
-        },
-        validateStatus: status => status < 500
-      });
+      const response = await axios.post(
+        `${process.env.AUGMONT_URL}/merchant/v1/users/${id}/address`,
+        qs.stringify({
+          name: req.body.name,
+          mobileNumber: req.body.mobileNumber,
+          address: req.body.address,
+          pincode: req.body.pincode,
+        }),
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          validateStatus: (status) => status < 500,
+        }
+      );
 
       if (response.status == 200) {
-        const updatedUser = await User.findByIdAndUpdate(id, {
-          $push: { addresses: {
-            addressId: response.data.result.data.userAddressId,
-            uniqueId: id,
-            name: req.body.name,
-            mobileNumber: req.body.mobileNumber,
-            addressType: req.body.label,
-            address: req.body.address,
-            state: response.data.result.data.stateName,
-            city: response.data.result.data.cityName,
-            pincode: req.body.pincode
-          } }
-        }, { new: true });
+        const updatedUser = await User.findByIdAndUpdate(
+          id,
+          {
+            $push: {
+              addresses: {
+                addressId: response.data.result.data.userAddressId,
+                uniqueId: id,
+                name: req.body.name,
+                mobileNumber: req.body.mobileNumber,
+                addressType: req.body.label,
+                address: req.body.address,
+                state: response.data.result.data.stateName,
+                city: response.data.result.data.cityName,
+                pincode: req.body.pincode,
+              },
+            },
+          },
+          { new: true }
+        );
 
-        return res.status(200).json(updatedUser.addresses.filter(address => address.addressId == response.data.result.data.userAddressId));
+        return res
+          .status(200)
+          .json(
+            updatedUser.addresses.filter(
+              (address) =>
+                address.addressId == response.data.result.data.userAddressId
+            )
+          );
       }
 
       res.status(400).json({

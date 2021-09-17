@@ -5,6 +5,7 @@ const https = require("https");
 const http = require("http");
 const dotenv = require("dotenv");
 const logger = require("morgan");
+const agentRoutes = require("./agentAPI/routes/agentRoutes");
 const augmontRoutes = require("./api/routes/augmontRoute");
 const userRoutes = require("./api/routes/userRoute");
 const receiveMsgs = require("./Whatsapp/receiveMessages");
@@ -42,6 +43,7 @@ app.use("/augmont", augmontRoutes);
 app.use("/paytm", paytmRoutes);
 app.use("/user", userRoutes);
 app.use("/webhook", receiveMsgs.receiveMsg);
+app.use("/agent", agentRoutes);
 
 // var httpServer = http.createServer(app);
 var httpsServer = https.createServer(options, app);
