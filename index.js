@@ -13,11 +13,11 @@ const paytmRoutes = require("./api/routes/paytmRoute");
 
 dotenv.config();
 
-var options = {
-  key: fs.readFileSync(process.env.PRIV_KEY),
-  cert: fs.readFileSync(process.env.CERT),
-  ca: fs.readFileSync(process.env.CHAIN),
-};
+// var options = {
+//   key: fs.readFileSync(process.env.PRIV_KEY),
+//   cert: fs.readFileSync(process.env.CERT),
+//   ca: fs.readFileSync(process.env.CHAIN),
+// };
 
 // require db
 require("./config/mongoose.js");
@@ -46,6 +46,9 @@ app.use("/webhook", receiveMsgs.receiveMsg);
 app.use("/agent", agentRoutes);
 
 // var httpServer = http.createServer(app);
-var httpsServer = https.createServer(options, app);
+// var httpsServer = https.createServer(options, app);
 
-httpsServer.listen(443);
+// httpsServer.listen(443);
+app.listen(process.env.PORT || 8000, function () {
+  console.log("server started on port 8000");
+});
