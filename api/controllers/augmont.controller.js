@@ -46,26 +46,30 @@ exports.buyList = async (req, res, next) => {
       return res.sendStatus(403);
     }
 
-    const uniqueCode = user._id;
+    const uniqueId = user._id;
 
     try {
-      const config = {
-        method: "get",
-        url: `${process.env.AUGMONT_URL}/merchant/v1/${uniqueCode}/buy`,
+      const response = await axios.get(`${process.env.AUGMONT_URL}/merchant/v1/${uniqueId}/buy`, {
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      };
+          Authorization: `Bearer ${token}`
+        }
+      });
 
-      axios(config)
-        .then(function (response) {
-          res.json(response.data.result.data);
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
+      if (response.status === 200) {
+        return res.json(response.data.result.data);
+      }
+      
+      let errors = '';
+      for (const errorCategory in response.data.errors) {
+        for (const error of response.data.errors[errorCategory]) {
+          errors = errors + error.message;
+        };
+      };
+      res.status(400).json({
+        'error(s)': errors,
+      });
     } catch (error) {
       console.log(error);
       next();
@@ -82,25 +86,30 @@ exports.sellList = async (req, res, next) => {
       return res.sendStatus(403);
     }
 
-    const uniqueCode = user._id;
+    const uniqueId = user._id;
+
     try {
-      const config = {
-        method: "get",
-        url: `${process.env.AUGMONT_URL}/merchant/v1/${uniqueCode}/sell`,
+      const response = await axios.get(`${process.env.AUGMONT_URL}/merchant/v1/${uniqueId}/sell`, {
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      };
+          Authorization: `Bearer ${token}`
+        }
+      });
 
-      axios(config)
-        .then(function (response) {
-          res.json(response.data.result.data);
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
+      if (response.status === 200) {
+        return res.json(response.data.result.data);
+      }
+
+      let errors = '';
+      for (const errorCategory in response.data.errors) {
+        for (const error of response.data.errors[errorCategory]) {
+          errors = errors + error.message;
+        };
+      };
+      res.status(400).json({
+        'error(s)': errors,
+      });
     } catch (error) {
       console.log(error);
       next();
@@ -153,7 +162,7 @@ exports.productList = async (req, res, next) => {
         return res.status(200).json(finalResult);
       }
 
-      res.sendStatus(500);
+      return res.sendStatus(500);
     } catch (error) {
       console.log(error);
       next(error);
@@ -251,8 +260,10 @@ exports.productList = async (req, res, next) => {
           }
         );
 
-        res.status(200).json(finalResult);
+        return res.status(200).json(finalResult);
       }
+
+      res.sendStatus(500);
     } catch (error) {
       console.log(error);
       next(error);
@@ -355,8 +366,14 @@ exports.orderProduct = async (req, res, next) => {
         });
       }
 
+      let errors = '';
+      for (const errorCategory in response.data.errors) {
+        for (const error of response.data.errors[errorCategory]) {
+          errors = errors + error.message;
+        };
+      };
       res.status(400).json({
-        error: response.data.message,
+        'error(s)': errors,
       });
     } catch (error) {
       console.log(error);
@@ -497,37 +514,33 @@ exports.isAuth = async (req, res) => {
 
 exports.goldRate = async (req, res, next) => {
   try {
-    axios
-      .get(`${process.env.AUGMONT_URL}/merchant/v1/rates`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-      })
-      .then((response) => {
-        const BuyPrice = response.data.result.data.rates.gBuy;
-        const tax = response.data.result.data.rates.gBuyGst;
-        const blockId = response.data.result.data.blockId;
-        const totalSellPrice = parseFloat(
-          response.data.result.data.rates.gSell
-        ).toFixed(2);
-        const totalBuyPrice = (parseFloat(BuyPrice) + parseFloat(tax)).toFixed(
-          2
-        );
-        res.status(200).json({
-          ok: 1,
-          totalBuyPrice: totalBuyPrice,
-          totalSellPrice: totalSellPrice,
-          blockId: blockId,
-          goldPrice: BuyPrice,
-          tax: tax,
-        });
-      })
-      .catch((error) => {
-        console.log(error);
-        next(error);
+    const response = await axios.get(`${process.env.AUGMONT_URL}/merchant/v1/rates`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (response.status === 200) {
+      const BuyPrice = response.data.result.data.rates.gBuy;
+      const tax = response.data.result.data.rates.gBuyGst;
+      const blockId = response.data.result.data.blockId;
+      const totalSellPrice = parseFloat(
+        response.data.result.data.rates.gSell
+      ).toFixed(2);
+      const totalBuyPrice = (parseFloat(BuyPrice) + parseFloat(tax)).toFixed(2);
+      return res.status(200).json({
+        ok: 1,
+        totalBuyPrice: totalBuyPrice,
+        totalSellPrice: totalSellPrice,
+        blockId: blockId,
+        goldPrice: BuyPrice,
+        tax: tax,
       });
+    }
+
+    res.sendStatus(500);
   } catch (error) {
     console.log(error);
     next();
@@ -613,16 +626,22 @@ exports.buyGold = async (req, res, next) => {
             goldBalance: response.data.result.data.goldBalance,
           });
 
-          res.status(200).json({
+          return res.status(200).json({
             totalAmount: newAmount,
             goldBalance: response.data.result.data.goldBalance,
             OK: 1,
           });
-        } else {
-          res.status(400).json({
-            error: response.data.message,
-          });
         }
+
+        let errors = '';
+        for (const errorCategory in response.data.errors) {
+          for (const error of response.data.errors[errorCategory]) {
+            errors = errors + error.message;
+          };
+        };
+        res.status(400).json({
+          'error(s)': errors,
+        });
       } catch (error) {
         next(error);
         console.log(error);
@@ -702,15 +721,21 @@ exports.sellGold = async (req, res, next) => {
             goldBalance: response.data.result.data.goldBalance,
           });
 
-          res.status(200).json({
+          return res.status(200).json({
             totalAmount: newAmount,
             goldBalance: response.data.result.data.goldBalance,
           });
-        } else {
-          res.status(400).json({
-            error: response.data.message,
-          });
         }
+          
+        let errors = '';
+        for (const errorCategory in response.data.errors) {
+          for (const error of response.data.errors[errorCategory]) {
+            errors = errors + error.message;
+          };
+        };
+        res.status(400).json({
+          'error(s)': errors,
+        });
       } catch (error) {
         console.log(error);
         next(error);
@@ -725,61 +750,66 @@ exports.sellGold = async (req, res, next) => {
 exports.bankCreate = async (req, res, next) => {
   const authHeader = req.headers.authorization;
 
-  if (authHeader) {
-    const userToken = authHeader.split(" ")[1];
-
-    jwt.verify(userToken, process.env.TOKEN_SECRET, async (err, user) => {
-      if (err) {
-        return res.sendStatus(403);
-      }
-
-      const uniqueId = user._id;
-      try {
-        const response = await axios.post(
-          `${process.env.AUGMONT_URL}/merchant/v1/users/${uniqueId}/banks`,
-          qs.stringify({
-            accountNumber: req.body.accountNumber,
-            accountName: req.body.accountName,
-            ifscCode: req.body.ifscCode,
-          }),
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/x-www-form-urlencoded",
-            },
-            validateStatus: (status) => status < 500,
-          }
-        );
-
-        if (response.status == 200) {
-          const id = response.data.result.data.uniqueId;
-          const update = {
-            $push: { userBanks: response.data.result.data },
-          };
-
-          await User.findOneAndUpdate({ _id: id }, update);
-
-          res.status(200).json({
-            userBankId: response.data.result.data.userBankId,
-            uniqueId: response.data.result.data.uniqueId,
-            accountNumber: response.data.result.data.accountNumber,
-            accountName: response.data.result.data.accountName,
-            ifscCode: response.data.result.data.ifscCode,
-          });
-        } else {
-          res.status(400).json({
-            error: response.data.message,
-          });
-        }
-      } catch (error) {
-        console.log(error);
-        next(error);
-      }
-    });
-  } else {
-    res.sendStatus(401);
-    next();
+  if (!authHeader) {
+    return res.sendStatus(401);
   }
+
+  const userToken = authHeader.split(" ")[1];
+
+  jwt.verify(userToken, process.env.TOKEN_SECRET, async (err, user) => {
+    if (err) {
+      return res.sendStatus(403);
+    }
+
+    const uniqueId = user._id;
+    try {
+      const response = await axios.post(
+        `${process.env.AUGMONT_URL}/merchant/v1/users/${uniqueId}/banks`,
+        qs.stringify({
+          accountNumber: req.body.accountNumber,
+          accountName: req.body.accountName,
+          ifscCode: req.body.ifscCode,
+        }),
+         {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          validateStatus: (status) => status < 500,
+        }
+      );
+
+      if (response.status == 200) {
+        const id = response.data.result.data.uniqueId;
+        const update = {
+          $push: { userBanks: response.data.result.data },
+        };
+
+        await User.findOneAndUpdate({ _id: id }, update);
+
+        return res.status(200).json({
+          userBankId: response.data.result.data.userBankId,
+          uniqueId: response.data.result.data.uniqueId,
+          accountNumber: response.data.result.data.accountNumber,
+          accountName: response.data.result.data.accountName,
+          ifscCode: response.data.result.data.ifscCode,
+        });
+      }
+
+      let errors = '';
+      for (const errorCategory in response.data.errors) {
+        for (const error of response.data.errors[errorCategory]) {
+          errors = errors + error.message;
+        };
+      };
+      res.status(400).json({
+        'error(s)': errors,
+      });
+    } catch (error) {
+      console.log(error);
+      next(error);
+    }
+  });
 };
 
 exports.createAddress = async (req, res, next) => {
@@ -837,18 +867,19 @@ exports.createAddress = async (req, res, next) => {
           { new: true }
         );
 
-        return res
-          .status(200)
-          .json(
-            updatedUser.addresses.filter(
-              (address) =>
-                address.addressId == response.data.result.data.userAddressId
-            )
-          );
+        return res.status(200).json(
+          updatedUser.addresses.filter((address) => address.addressId == response.data.result.data.userAddressId)
+        );
       }
 
+      let errors = '';
+      for (const errorCategory in response.data.errors) {
+        for (const error of response.data.errors[errorCategory]) {
+          errors = errors + error.message;
+        };
+      };
       res.status(400).json({
-        error: response.data.message,
+        'error(s)': errors,
       });
     } catch (error) {
       console.log(error);
