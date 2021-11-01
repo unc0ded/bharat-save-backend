@@ -23,6 +23,9 @@ exports.signup = async (req, res, next) => {
             emailId: req.body.emailId,
             userName: req.body.userName,
             referralCode: req.body.referralCode,
+            referredcode: req.body.referredCode,
+            customerEarnings: "0.00",
+            agentEarnings: "0.00",
           });
           try {
             await agent.save();
@@ -146,6 +149,142 @@ exports.customerCommissionDetails = async (req, res, next) => {
                   customerCommission[0].totalCommission.toFixed(2);
               }
               res.json(referredCustomers);
+            } catch (error) {
+              console.log(error);
+              next(error);
+            }
+          }
+        }
+      );
+    } else {
+      res.sendStatus(401);
+    }
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+exports.agentCommissionDetails = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  try {
+    if (authHeader) {
+      const usertoken = authHeader.split(" ")[1];
+
+      jwt.verify(
+        usertoken,
+        process.env.TOKEN_SECRET,
+        async (err, decodedToken) => {
+          if (err) {
+            console.log(err);
+            return res.sendStatus(403);
+          } else {
+            try {
+              const agent = await Agent.findOne(
+                { _id: decodedToken._id },
+                "referralCode"
+              ).exec();
+              const referralCode = agent.referralCode;
+              let referredAgents = await Agent.find(
+                { referredCode: referralCode },
+                "_id userName customerEarnings"
+              ).exec();
+              referredAgents = JSON.parse(JSON.stringify(referredAgents));
+
+              for (let i = 0; i < referredAgents.length; i++) {
+                const customerEarnings = parseFloat(
+                  referredAgents[i].customerEarnings
+                );
+                const agentCommission = await Agent.aggregate([
+                  {
+                    $match: {
+                      _id: referredAgents[i]._id,
+                    },
+                  },
+                  {
+                    $project: {
+                      _id: referredAgents[i]._id,
+                      userName: "$userName",
+                      totalCommission: {
+                        $multiply: [customerEarnings, 0.03],
+                      },
+                    },
+                  },
+                ]).exec();
+
+                referredAgents[i].totalCommission =
+                  agentCommission[0].totalCommission.toFixed(2);
+              }
+
+              res.json(referredAgents);
+            } catch (error) {
+              console.log(error);
+              next(error);
+            }
+          }
+        }
+      );
+    } else {
+      res.sendStatus(401);
+    }
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+exports.customerTransactionDetails = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  try {
+    if (authHeader) {
+      const usertoken = authHeader.split(" ")[1];
+
+      jwt.verify(
+        usertoken,
+        process.env.TOKEN_SECRET,
+        async (err, decodedToken) => {
+          if (err) {
+            console.log(err);
+            return res.sendStatus(403);
+          } else {
+            try {
+              const agent = await Agent.findOne(
+                { _id: decodedToken._id },
+                "referralCode"
+              ).exec();
+              const referralCode = agent.referralCode;
+              let referredCustomers = await User.find(
+                { referralCode: referralCode },
+                "_id userName"
+              ).exec();
+              referredCustomers = JSON.parse(JSON.stringify(referredCustomers));
+              const buysTxnList = [];
+
+              for (let i = 0; i < referredCustomers.length; i++) {
+                const customerTxnCommission = await Buy.aggregate([
+                  {
+                    $match: {
+                      uniqueId: referredCustomers[i]._id,
+                    },
+                  },
+                  {
+                    $addFields: {
+                      preTaxBuyAmount: { $toDouble: "$preTaxAmount" },
+                    },
+                  },
+
+                  {
+                    $project: {
+                      userName: referredCustomers[i].userName,
+                      date: "$date",
+                      preTaxBuyAmount: "$preTaxBuyAmount",
+                      totalCommission: {
+                        $multiply: ["$preTaxBuyAmount", 0.03],
+                      },
+                    },
+                  },
+                ]).exec();
+                buysTxnList.push(...customerTxnCommission);
+              }
+              res.json(buysTxnList);
             } catch (error) {
               console.log(error);
               next(error);

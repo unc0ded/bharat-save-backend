@@ -7,6 +7,10 @@ router.post("/signup", controller.signup);
 router.post("/login", controller.login);
 // get the customers with commission earned
 router.get("/customercommissions", controller.customerCommissionDetails);
+// get the agents with commission earned
+router.get("/agentcommissions", controller.agentCommissionDetails);
+// get the customer transactions
+router.get("/customertransactions", controller.customerTransactionDetails);
 
 // router.get('/bankDetails', controller.getBankDetails);
 

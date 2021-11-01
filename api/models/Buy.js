@@ -24,6 +24,10 @@ const buySchema = new mongoose.Schema({
     ],
   },
   invoiceNumber: { type: String },
+  date: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
 module.exports = mongoose.model("Buy", buySchema);

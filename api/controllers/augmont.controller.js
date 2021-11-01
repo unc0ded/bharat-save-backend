@@ -1,4 +1,5 @@
 const User = require("../models/User");
+const Agent = require("../../agentAPI/models/Agent");
 const axios = require("axios").default;
 const { nanoid } = require("nanoid");
 const FormData = require("form-data");
@@ -401,6 +402,7 @@ exports.createUser = async (req, res, next) => {
                 emailId: req.body.emailId,
                 userName: req.body.userName,
                 userPincode: req.body.userPincode,
+                referralCode: req.body.referralCode,
               });
               try {
                 await user.save();
@@ -587,10 +589,24 @@ exports.buyGold = async (req, res, next) => {
           const newBuy = new Buy(response.data.result.data);
           await newBuy.save();
           const user = await User.findById(id).exec();
+
           const newAmount = (
             parseFloat(user.totalAmount) +
             parseFloat(response.data.result.data.preTaxAmount)
           ).toFixed(2);
+
+          if (user.referralCode) {
+            const agent = await Agent.findOne({
+              referralCode: user.referralCode,
+            }).exec();
+            const newAgentCommission = (
+              parseFloat(agent.customerEarnings) +
+              0.03 * parseFloat(response.data.result.data.preTaxAmount)
+            ).toFixed(2);
+            await Agent.findByIdAndUpdate(agent._id, {
+              customerEarnings: newAgentCommission,
+            });
+          }
 
           await User.findByIdAndUpdate(id, {
             totalAmount: newAmount,
