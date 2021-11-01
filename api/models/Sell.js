@@ -19,6 +19,10 @@ const sellSchema = new mongoose.Schema({
     accountNumber: { type: String },
     ifscCode: { type: String },
   },
+  date: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
 module.exports = mongoose.model("Sell", sellSchema);

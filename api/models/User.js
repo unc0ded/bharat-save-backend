@@ -30,11 +30,11 @@ const userSchema = new mongoose.Schema({
   },
   totalAmount: {
     type: String,
-    default: "0",
+    default: "0.00",
   },
   goldBalance: {
     type: String,
-    default: "0",
+    default: "0.00",
   },
   activePlans: [
     {
