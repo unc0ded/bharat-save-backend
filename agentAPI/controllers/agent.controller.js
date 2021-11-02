@@ -205,7 +205,7 @@ exports.agentCommissionDetails = async (req, res, next) => {
                       _id: referredAgents[i]._id,
                       userName: "$userName",
                       totalCommission: {
-                        $multiply: [customerEarnings, 0.03],
+                        $multiply: [customerEarnings, 0.1],
                       },
                     },
                   },
