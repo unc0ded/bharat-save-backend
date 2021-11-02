@@ -510,20 +510,15 @@ exports.goldRate = async (req, res, next) => {
     });
 
     if (response.status === 200) {
-      const BuyPrice = response.data.result.data.rates.gBuy;
-      const tax = response.data.result.data.rates.gBuyGst;
+      const buyPrice = response.data.result.data.rates.gBuy;
+      const buyGst = response.data.result.data.rates.gBuyGst;
       const blockId = response.data.result.data.blockId;
-      const totalSellPrice = parseFloat(
-        response.data.result.data.rates.gSell
-      ).toFixed(2);
-      const totalBuyPrice = (parseFloat(BuyPrice) + parseFloat(tax)).toFixed(2);
+      const sellPrice = response.data.result.data.rates.gSell;
       return res.status(200).json({
-        ok: 1,
-        totalBuyPrice: totalBuyPrice,
-        totalSellPrice: totalSellPrice,
-        blockId: blockId,
-        goldPrice: BuyPrice,
-        tax: tax,
+        buyPrice,
+        sellPrice,
+        blockId,
+        buyGst,
       });
     }
 
