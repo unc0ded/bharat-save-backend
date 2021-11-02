@@ -140,7 +140,7 @@ exports.customerCommissionDetails = async (req, res, next) => {
                   {
                     $project: {
                       totalCommission: {
-                        $multiply: ["$totalBuy", 0.03],
+                        $multiply: ["$totalBuy", 0.015],
                       },
                     },
                   },
@@ -277,7 +277,7 @@ exports.customerTransactionDetails = async (req, res, next) => {
                       date: "$date",
                       preTaxBuyAmount: "$preTaxBuyAmount",
                       totalCommission: {
-                        $multiply: ["$preTaxBuyAmount", 0.03],
+                        $multiply: ["$preTaxBuyAmount", 0.015],
                       },
                     },
                   },

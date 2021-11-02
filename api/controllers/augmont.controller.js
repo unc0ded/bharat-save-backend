@@ -601,7 +601,7 @@ exports.buyGold = async (req, res, next) => {
             }).exec();
             const newAgentCommission = (
               parseFloat(agent.customerEarnings) +
-              0.03 * parseFloat(response.data.result.data.preTaxAmount)
+              0.015 * parseFloat(response.data.result.data.preTaxAmount)
             ).toFixed(2);
             await Agent.findByIdAndUpdate(agent._id, {
               customerEarnings: newAgentCommission,
