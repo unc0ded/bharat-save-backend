@@ -8,9 +8,11 @@ const jwt = require("jsonwebtoken");
 
 exports.signup = async (req, res, next) => {
   const unique_id = nanoid();
-
+  const referralCode = referralCodes.generate({
+    length: 8,
+    count: 1,
+  })[0];
   try {
-    console.log(req.body);
     await Agent.findOne(
       { mobileNumber: req.body.mobileNumber },
       async (err, foundUser) => {
@@ -22,7 +24,7 @@ exports.signup = async (req, res, next) => {
             mobileNumber: req.body.mobileNumber,
             emailId: req.body.emailId,
             userName: req.body.userName,
-            referralCode: req.body.referralCode,
+            referralCode: referralCode,
             referredcode: req.body.referredCode,
             customerEarnings: "0.00",
             agentEarnings: "0.00",
@@ -45,6 +47,7 @@ exports.signup = async (req, res, next) => {
                 mobileNumber: req.body.mobileNumber,
                 emailId: req.body.emailId,
                 userName: req.body.userName,
+                referralCode: referralCode,
               },
             });
           } catch (error) {
@@ -82,6 +85,7 @@ exports.login = async (req, res, next) => {
               mobileNumber: foundUser.mobileNumber,
               emailId: foundUser.emailId,
               userName: foundUser.userName,
+              referralCode: foundUser.referralCode,
             },
           });
         }
