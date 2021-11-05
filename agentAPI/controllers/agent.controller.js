@@ -5,6 +5,7 @@ const axios = require("axios").default;
 const { nanoid } = require("nanoid");
 const FormData = require("form-data");
 const jwt = require("jsonwebtoken");
+const referralCodes = require("referral-codes");
 
 exports.signup = async (req, res, next) => {
   const unique_id = nanoid();
