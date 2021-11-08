@@ -482,9 +482,11 @@ exports.isAuth = async (req, res) => {
 
       jwt.verify(usertoken, process.env.TOKEN_SECRET, (err, user) => {
         if (err) {
-          return res.sendStatus(403);
+          return res
+            .status(403)
+            .send({ message: "Token expired or Invalid token" });
         } else {
-          return res.sendStatus(200);
+          return res.status(200).send({ message: "Token authenticated" });
         }
       });
     } else {
