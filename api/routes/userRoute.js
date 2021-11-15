@@ -7,4 +7,6 @@ router.get('/balance', controller.getBalanceDetails);
 
 router.get('/bankDetails', controller.getBankDetails);
 
+router.get('/addresses', controller.getAddresses);
+
 module.exports = router;

@@ -361,7 +361,6 @@ exports.orderProduct = async (req, res, next) => {
             response.data.result.data.merchantTransactionId,
           orderId: response.data.result.data.orderId,
           shippingCharges: response.data.result.data.shippingCharges,
-          sku: req.body.productId,
           productName,
           shippingAddressId: req.body.addressId,
         });
@@ -585,8 +584,7 @@ exports.buyGold = async (req, res, next) => {
 
       if (response.status == 200) {
         const id = response.data.result.data.uniqueId;
-        const newBuy = new Buy(response.data.result.data);
-        await newBuy.save();
+        await Buy.create(response.data.result.data);
         const user = await User.findById(id).exec();
 
         const newAmount = (
