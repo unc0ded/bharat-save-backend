@@ -1,4 +1,4 @@
-const User = require("../models/User");
+ const User = require("../models/User");
 const Agent = require("../../agentAPI/models/Agent");
 const axios = require("axios").default;
 const { nanoid } = require("nanoid");
