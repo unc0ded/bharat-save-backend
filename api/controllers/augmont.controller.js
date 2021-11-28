@@ -483,19 +483,24 @@ exports.login = async (req, res, next) => {
 
 exports.isAuth = async (req, res) => {
   const authHeader = req.headers.authorization;
+  try {
+    if (authHeader) {
+      const usertoken = authHeader.split(" ")[1];
 
-  if (!authHeader) {
-    return res.sendStatus(401);
-  }
-
-  const userToken = authHeader.split(" ")[1];
-
-  jwt.verify(userToken, process.env.TOKEN_SECRET, (err, user) => {
-    if (err) {
-      return res.sendStatus(403);
+      jwt.verify(usertoken, process.env.TOKEN_SECRET, (err, user) => {
+        if (err) {
+          return res
+            .status(403)
+            .send({ message: "Token expired or Invalid token" });
+        } else {
+          return res.status(200).send({ message: "Token authenticated" });
+        }
+      });
+    } else {
+      res.sendStatus(401);
     }
-    res.status(200).send();
-  });
+  } catch (error) {
+    console.log(error);
 };
 
 exports.goldRate = async (req, res, next) => {
@@ -600,8 +605,34 @@ exports.buyGold = async (req, res, next) => {
             parseFloat(agent.customerEarnings) +
             0.03 * parseFloat(response.data.result.data.preTaxAmount)
           ).toFixed(2);
-          await Agent.findByIdAndUpdate(agent._id, {
-            customerEarnings: newAgentCommission,
+
+          if (user.referralCode) {
+            const agent = await Agent.findOne({
+              referralCode: user.referralCode,
+            }).exec();
+            const newAgentCommission = (
+              parseFloat(agent.customerEarnings) +
+              0.015 * parseFloat(response.data.result.data.preTaxAmount)
+            ).toFixed(2);
+            await Agent.findByIdAndUpdate(agent._id, {
+              customerEarnings: newAgentCommission,
+            });
+          }
+
+          await User.findByIdAndUpdate(id, {
+            totalAmount: newAmount,
+            goldBalance: response.data.result.data.goldBalance,
+          });
+
+          res.status(200).json({
+            totalAmount: newAmount,
+            goldBalance: response.data.result.data.goldBalance,
+            OK: 1,
+          });
+        } else {
+          res.status(400).json({
+            error: response.data.message,
+
           });
         }
 

@@ -5,12 +5,15 @@ const axios = require("axios").default;
 const { nanoid } = require("nanoid");
 const FormData = require("form-data");
 const jwt = require("jsonwebtoken");
+const referralCodes = require("referral-codes");
 
 exports.signup = async (req, res, next) => {
   const unique_id = nanoid();
-
+  const referralCode = referralCodes.generate({
+    length: 8,
+    count: 1,
+  })[0];
   try {
-    console.log(req.body);
     await Agent.findOne(
       { mobileNumber: req.body.mobileNumber },
       async (err, foundUser) => {
@@ -22,7 +25,7 @@ exports.signup = async (req, res, next) => {
             mobileNumber: req.body.mobileNumber,
             emailId: req.body.emailId,
             userName: req.body.userName,
-            referralCode: req.body.referralCode,
+            referralCode: referralCode,
             referredcode: req.body.referredCode,
             customerEarnings: "0.00",
             agentEarnings: "0.00",
@@ -45,6 +48,7 @@ exports.signup = async (req, res, next) => {
                 mobileNumber: req.body.mobileNumber,
                 emailId: req.body.emailId,
                 userName: req.body.userName,
+                referralCode: referralCode,
               },
             });
           } catch (error) {
@@ -82,6 +86,7 @@ exports.login = async (req, res, next) => {
               mobileNumber: foundUser.mobileNumber,
               emailId: foundUser.emailId,
               userName: foundUser.userName,
+              referralCode: foundUser.referralCode,
             },
           });
         }
@@ -140,7 +145,7 @@ exports.customerCommissionDetails = async (req, res, next) => {
                   {
                     $project: {
                       totalCommission: {
-                        $multiply: ["$totalBuy", 0.03],
+                        $multiply: ["$totalBuy", 0.015],
                       },
                     },
                   },
@@ -205,7 +210,7 @@ exports.agentCommissionDetails = async (req, res, next) => {
                       _id: referredAgents[i]._id,
                       userName: "$userName",
                       totalCommission: {
-                        $multiply: [customerEarnings, 0.03],
+                        $multiply: [customerEarnings, 0.1],
                       },
                     },
                   },
@@ -277,7 +282,7 @@ exports.customerTransactionDetails = async (req, res, next) => {
                       date: "$date",
                       preTaxBuyAmount: "$preTaxBuyAmount",
                       totalCommission: {
-                        $multiply: ["$preTaxBuyAmount", 0.03],
+                        $multiply: ["$preTaxBuyAmount", 0.015],
                       },
                     },
                   },
