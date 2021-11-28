@@ -13,7 +13,6 @@ const orderSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    sku: { type: String },
     productName: { type: String },
     shippingAddressId: { type: String },
     shippingCharges: { type: String }
