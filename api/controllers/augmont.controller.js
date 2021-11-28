@@ -608,7 +608,8 @@ exports.buyGold = async (req, res, next) => {
 
       if (response.status == 200) {
         const id = response.data.result.data.uniqueId;
-        await Buy.create(response.data.result.data);
+        const newBuy = new Buy(response.data.result.data);
+        await newBuy.save();
         const user = await User.findById(id).exec();
 
         const newAmount = (
