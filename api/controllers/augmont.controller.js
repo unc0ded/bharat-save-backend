@@ -1,4 +1,4 @@
- const User = require("../models/User");
+const User = require("../models/User");
 const Agent = require("../../agentAPI/models/Agent");
 const axios = require("axios").default;
 const { nanoid } = require("nanoid");
@@ -54,26 +54,29 @@ exports.buyList = async (req, res, next) => {
     const uniqueId = user._id;
 
     try {
-      const response = await axios.get(`${process.env.AUGMONT_URL}/merchant/v1/${uniqueId}/buy`, {
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
+      const response = await axios.get(
+        `${process.env.AUGMONT_URL}/merchant/v1/${uniqueId}/buy`,
+        {
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         }
-      });
+      );
 
       if (response.status === 200) {
         return res.json(response.data.result.data);
       }
-      
-      let errors = '';
+
+      let errors = "";
       for (const errorCategory in response.data.errors) {
         for (const error of response.data.errors[errorCategory]) {
           errors = errors + error.message;
-        };
-      };
+        }
+      }
       res.status(400).json({
-        'error(s)': errors,
+        "error(s)": errors,
       });
     } catch (error) {
       console.log(error);
@@ -85,7 +88,7 @@ exports.buyList = async (req, res, next) => {
 exports.sellList = async (req, res, next) => {
   const authHeader = req.headers.authorization;
 
-  if(!authHeader) {
+  if (!authHeader) {
     return res.sendStatus(401);
   }
 
@@ -99,26 +102,29 @@ exports.sellList = async (req, res, next) => {
     const uniqueId = user._id;
 
     try {
-      const response = await axios.get(`${process.env.AUGMONT_URL}/merchant/v1/${uniqueId}/sell`, {
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
+      const response = await axios.get(
+        `${process.env.AUGMONT_URL}/merchant/v1/${uniqueId}/sell`,
+        {
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         }
-      });
+      );
 
       if (response.status === 200) {
         return res.json(response.data.result.data);
       }
 
-      let errors = '';
+      let errors = "";
       for (const errorCategory in response.data.errors) {
         for (const error of response.data.errors[errorCategory]) {
           errors = errors + error.message;
-        };
-      };
+        }
+      }
       res.status(400).json({
-        'error(s)': errors,
+        "error(s)": errors,
       });
     } catch (error) {
       console.log(error);
@@ -375,14 +381,14 @@ exports.orderProduct = async (req, res, next) => {
         });
       }
 
-      let errors = '';
+      let errors = "";
       for (const errorCategory in response.data.errors) {
         for (const error of response.data.errors[errorCategory]) {
           errors = errors + error.message;
-        };
-      };
+        }
+      }
       res.status(400).json({
-        'error(s)': errors,
+        "error(s)": errors,
       });
     } catch (error) {
       console.log(error);
@@ -393,10 +399,12 @@ exports.orderProduct = async (req, res, next) => {
 
 exports.createUser = async (req, res, next) => {
   try {
-    const existingUser = await User.findOne({ mobileNumber: req.body.mobileNumber });
+    const existingUser = await User.findOne({
+      mobileNumber: req.body.mobileNumber,
+    });
 
     if (existingUser) {
-      return res.sendStatus(500);     // user already exists
+      return res.sendStatus(500); // user already exists
     }
 
     const uniqueId = nanoid();
@@ -408,15 +416,18 @@ exports.createUser = async (req, res, next) => {
     data.append("userName", req.body.userName);
     data.append("userPincode", req.body.userPincode);
 
-    const response = await axios.post(`${process.env.AUGMONT_URL}/merchant/v1/users`, {
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-        ...data.getHeaders()
-      },
-      data: data
-    });
+    const response = await axios.post(
+      `${process.env.AUGMONT_URL}/merchant/v1/users`,
+      {
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+          ...data.getHeaders(),
+        },
+        data: data,
+      }
+    );
 
     if (response.status === 200) {
       const user = await User.create({
@@ -425,10 +436,12 @@ exports.createUser = async (req, res, next) => {
         emailId: req.body.emailId,
         userName: req.body.userName,
         userPincode: req.body.userPincode,
-        referralCode: req.body.referralCode
+        referralCode: req.body.referralCode,
       });
 
-      const token = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET, { expiresIn: "7d" });
+      const token = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET, {
+        expiresIn: "7d",
+      });
 
       return res.status(200).json({
         token,
@@ -436,19 +449,19 @@ exports.createUser = async (req, res, next) => {
           _id: user._id,
           mobileNumber: user.mobileNumber,
           emailId: user.emailId,
-          userName: user.userName
-        }
+          userName: user.userName,
+        },
       });
     }
 
-    let errors = '';
+    let errors = "";
     for (const errorCategory in response.data.errors) {
       for (const error of response.data.errors[errorCategory]) {
         errors = errors + error.message;
-      };
+      }
     }
     res.status(400).json({
-      'error(s)': errors,
+      "error(s)": errors,
     });
   } catch (error) {
     console.log(error);
@@ -461,10 +474,12 @@ exports.login = async (req, res, next) => {
     const user = await User.findOne({ mobileNumber: req.body.mobileNumber });
 
     if (!user) {
-      return res.sendStatus(404);   // user not found
+      return res.sendStatus(404); // user not found
     }
 
-    const token = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET, { expiresIn: "7d" });
+    const token = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET, {
+      expiresIn: "7d",
+    });
 
     res.status(200).json({
       token,
@@ -472,8 +487,8 @@ exports.login = async (req, res, next) => {
         _id: user._id,
         mobileNumber: user.mobileNumber,
         emailId: user.emailId,
-        userName: user.userName
-      }
+        userName: user.userName,
+      },
     });
   } catch (error) {
     console.log(error);
@@ -501,17 +516,21 @@ exports.isAuth = async (req, res) => {
     }
   } catch (error) {
     console.log(error);
+  }
 };
 
 exports.goldRate = async (req, res, next) => {
   try {
-    const response = await axios.get(`${process.env.AUGMONT_URL}/merchant/v1/rates`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-    });
+    const response = await axios.get(
+      `${process.env.AUGMONT_URL}/merchant/v1/rates`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
     if (response.status === 200) {
       const buyPrice = response.data.result.data.rates.gBuy;
@@ -535,7 +554,7 @@ exports.goldRate = async (req, res, next) => {
 
 exports.buyGold = async (req, res, next) => {
   const authHeader = req.headers.authorization;
-  
+
   if (!authHeader) {
     return res.sendStatus(401);
   }
@@ -632,7 +651,6 @@ exports.buyGold = async (req, res, next) => {
         } else {
           res.status(400).json({
             error: response.data.message,
-
           });
         }
 
@@ -648,14 +666,14 @@ exports.buyGold = async (req, res, next) => {
         });
       }
 
-      let errors = '';
+      let errors = "";
       for (const errorCategory in response.data.errors) {
         for (const error of response.data.errors[errorCategory]) {
           errors = errors + error.message;
-        };
-      };
+        }
+      }
       res.status(400).json({
-        'error(s)': errors,
+        "error(s)": errors,
       });
     } catch (error) {
       next(error);
@@ -740,15 +758,15 @@ exports.sellGold = async (req, res, next) => {
           goldBalance: response.data.result.data.goldBalance,
         });
       }
-          
-      let errors = '';
+
+      let errors = "";
       for (const errorCategory in response.data.errors) {
         for (const error of response.data.errors[errorCategory]) {
           errors = errors + error.message;
-        };
-      };
+        }
+      }
       res.status(400).json({
-        'error(s)': errors,
+        "error(s)": errors,
       });
     } catch (error) {
       console.log(error);
@@ -780,7 +798,7 @@ exports.bankCreate = async (req, res, next) => {
           accountName: req.body.accountName,
           ifscCode: req.body.ifscCode,
         }),
-         {
+        {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/x-www-form-urlencoded",
@@ -806,14 +824,14 @@ exports.bankCreate = async (req, res, next) => {
         });
       }
 
-      let errors = '';
+      let errors = "";
       for (const errorCategory in response.data.errors) {
         for (const error of response.data.errors[errorCategory]) {
           errors = errors + error.message;
-        };
-      };
+        }
+      }
       res.status(400).json({
-        'error(s)': errors,
+        "error(s)": errors,
       });
     } catch (error) {
       console.log(error);
@@ -877,19 +895,24 @@ exports.createAddress = async (req, res, next) => {
           { new: true }
         );
 
-        return res.status(200).json(
-          updatedUser.addresses.filter((address) => address.addressId == response.data.result.data.userAddressId)
-        );
+        return res
+          .status(200)
+          .json(
+            updatedUser.addresses.filter(
+              (address) =>
+                address.addressId == response.data.result.data.userAddressId
+            )
+          );
       }
 
-      let errors = '';
+      let errors = "";
       for (const errorCategory in response.data.errors) {
         for (const error of response.data.errors[errorCategory]) {
           errors = errors + error.message;
-        };
-      };
+        }
+      }
       res.status(400).json({
-        'error(s)': errors,
+        "error(s)": errors,
       });
     } catch (error) {
       console.log(error);
