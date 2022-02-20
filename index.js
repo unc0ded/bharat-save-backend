@@ -50,5 +50,5 @@ app.use("/agent", agentRoutes);
 
 // httpsServer.listen(443);
 app.listen(process.env.PORT || 8000, function () {
-  console.log("server started on port 8000");
+  console.log(`server started on port ${process.env.PORT}`);
 });
