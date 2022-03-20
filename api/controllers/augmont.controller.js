@@ -10,7 +10,7 @@ const Sell = require("../models/Sell");
 const Order = require("../models/Order");
 
 const token =
-  "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIzIiwianRpIjoiMzE5NTAzYWFkYzAxZmY1ZDY3YTUzYjc1N2FlNjhhMDkxYmQ1NDI1NzM0YTYzYWQ5MjQ2YzQxNmYyM2ZmZTQ2ZTZhNzEyMjA4ZGYyMzcyNTgiLCJpYXQiOjE2NDUxNTk1NzgsIm5iZiI6MTY0NTE1OTU3OCwiZXhwIjoxNjQ3NzUxNTc4LCJzdWIiOiI1MDAwMDE0NSIsInNjb3BlcyI6W119.ZfjqrJY3eB4QTKXJqWyTUCkvAEuNnmWJZ-LdcMjN3mgBy6dWciHqJtnS0EXa0IWt_tiEy8o19pVCSN6jYMC8omZfYgmtjuKj4stPElhvrSGMX_x69SJq6WEHDZ4Ip6hNgugihRHxA4NMHX1kYjImy-d8owpuYt_2eftxe3iT5L43Muy6H3kf_Q7JFWnIK8KpGQssC5pGeoVZjjH_gIwMo0weqccu8Fysyc42k3N06jOVrrbSSL5rVoHoWxJYze0xAvL4LB018Me8GrpRwhhCJ6iN9kk_rC4-Q-wD4C--mXxhxJwGGRj5rzjIle43W2k0dk8iOpG9aDfDfXmCrjElKwsuxxXS4wNWT8IUoT1wSYsJoP_kiH3IV6Vh4JZp8MnNW_DOMPfssEgkhEy0hx2sLREb1Pl7tjzRpD5Qf5-bgO93FAw66n1gKr8FSPBt4fP7NORsYQHg_24hr3H_zVRyZRxqpIaaCMCF6Y3DdIQEJ8tRalpBZR54Xv1q-8JWdHeX4wQMHQi7X5tRF78sUFAUuhoBMpZicnO87jqU_x_lxXWeizr7cwqpnYBVnyrhKIexmPncqUxjLKq7DFB24paP_JMY9xd2VQUlOIuJhBeZU0fC-WjyG3Qtqt3iMkm3OY7yPlcMFm6I_AO_KY3xlHPb416fdAxZh2zISqHsXV2zh0A";
+  "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIzIiwianRpIjoiY2I4YzM0YzA4ZWNmZDU5ZTIxM2FmOTRlOWE4NjMxZTZjNzFjNjNiMDQ3NTg2NDYzYjdmMTJiZThlNDk3MDc4OThmOGFlZTI2ODFiNGRkN2UiLCJpYXQiOjE2NDc3Njc1OTgsIm5iZiI6MTY0Nzc2NzU5OCwiZXhwIjoxNjUwMzU5NTk4LCJzdWIiOiI1MDAwMDE0NSIsInNjb3BlcyI6W119.dloDUN_gedYW-1Bj7MM5a2XmG6ffIxJC6n3PeLd1a7m9f5nuACSHnSIv6COlWQgT5B4iYt9l02u7LmzDxc4ZV-L6VJhGVSOIyCPJlFw_gQmWosd2myhGt_ZzdBwsh9QzI6mjab1WceZoUV5eUSKVIRgz9nclpEgOELTbLQd2tzpT20SjpPScjAtfkeoYy1mAXLxL7dOvgp8xYJ1gBgyhHw92U8_OVzhM6VcSJk67P2IbqdhTMTNPazarqEywZrUvjgerFfblRk-RTRVaXTp6SzyGdKgFf1jAt__c6MbNHZGWj7rpIq2npWH0AuAUk0XNf9g2edidRabNRlWBXN05mfVJSzAqJxm10IGWNjnxQXx0tzZzjjpHq9UdysMCZvdxYefsP7nUu64gByQ456R49YdRKoAbMnLS7XiPAbDNBTBTaRKhdcIr_liimAyh6P-QErIdUPj5SW1CLKEjWe-nTwBFLndEqCfr4Em9S5aNKAODHxlTwwqkyXxVXdaa6YPVE_K9HdnEsmvWCqQfMpxOQT3SLENKY37YSJiMV_K_lOx7EaIUHkI2ZW9f37-q7IdujhdTKDg52Wk3mQvOSC6b8afK6QZXHU_jwpBPatz2XTU_YNjP9ojeo9REv1ozS6LYlhPXgYVbONlkzPbFtu36JQ-I-6tBu3prCyCyelcpgWw";
 exports.augmontToken = token;
 // var data = new FormData();
 // data.append("email", "devansh299@gmail.com");
@@ -608,14 +608,8 @@ exports.buyGold = async (req, res, next) => {
 
       if (response.status == 200) {
         const id = response.data.result.data.uniqueId;
-        const newBuy = new Buy(response.data.result.data);
-        await newBuy.save();
+        await Buy.create(response.data.result.data);
         const user = await User.findById(id).exec();
-
-        const newAmount = (
-          parseFloat(user.totalAmount) +
-          parseFloat(response.data.result.data.preTaxAmount)
-        ).toFixed(2);
 
         if (user.referralCode) {
           const agent = await Agent.findOne({
@@ -626,42 +620,16 @@ exports.buyGold = async (req, res, next) => {
             0.03 * parseFloat(response.data.result.data.preTaxAmount)
           ).toFixed(2);
 
-          if (user.referralCode) {
-            const agent = await Agent.findOne({
-              referralCode: user.referralCode,
-            }).exec();
-            const newAgentCommission = (
-              parseFloat(agent.customerEarnings) +
-              0.015 * parseFloat(response.data.result.data.preTaxAmount)
-            ).toFixed(2);
-            await Agent.findByIdAndUpdate(agent._id, {
-              customerEarnings: newAgentCommission,
-            });
-          }
-
-          await User.findByIdAndUpdate(id, {
-            totalAmount: newAmount,
-            goldBalance: response.data.result.data.goldBalance,
-          });
-
-          res.status(200).json({
-            totalAmount: newAmount,
-            goldBalance: response.data.result.data.goldBalance,
-            OK: 1,
-          });
-        } else {
-          res.status(400).json({
-            error: response.data.message,
+          await Agent.findByIdAndUpdate(agent._id, {
+            customerEarnings: newAgentCommission,
           });
         }
 
         await User.findByIdAndUpdate(id, {
-          totalAmount: newAmount,
           goldBalance: response.data.result.data.goldBalance,
         });
 
         return res.status(200).json({
-          totalAmount: newAmount,
           goldBalance: response.data.result.data.goldBalance,
           OK: 1,
         });
