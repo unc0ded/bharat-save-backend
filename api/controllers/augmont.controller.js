@@ -210,7 +210,7 @@ exports.productList = async (req, res, next) => {
       );
 
       if (response.status === 200) {
-        const user = await User.findById(id);
+        const user = await User.findById(id).exec();
         if (!user) {
           return res.sendStatus(404);
         }
@@ -305,7 +305,7 @@ exports.orderProduct = async (req, res, next) => {
     const merchantTransactionId = nanoid();
 
     try {
-      const user = await User.findById(id);
+      const user = await User.findById(id).exec();
       if (!user) {
         return res.sendStatus(404);
       }
@@ -401,7 +401,7 @@ exports.createUser = async (req, res, next) => {
   try {
     const existingUser = await User.findOne({
       mobileNumber: req.body.mobileNumber,
-    });
+    }).exec();
 
     if (existingUser) {
       return res.sendStatus(500); // user already exists
@@ -471,7 +471,7 @@ exports.createUser = async (req, res, next) => {
 
 exports.login = async (req, res, next) => {
   try {
-    const user = await User.findOne({ mobileNumber: req.body.mobileNumber });
+    const user = await User.findOne({ mobileNumber: req.body.mobileNumber }).exec();
 
     if (!user) {
       return res.sendStatus(404); // user not found
@@ -622,16 +622,15 @@ exports.buyGold = async (req, res, next) => {
 
           await Agent.findByIdAndUpdate(agent._id, {
             customerEarnings: newAgentCommission,
-          });
+          }).exec();
         }
 
         await User.findByIdAndUpdate(id, {
           goldBalance: response.data.result.data.goldBalance,
-        });
+        }).exec();
 
         return res.status(200).json({
           goldBalance: response.data.result.data.goldBalance,
-          OK: 1,
         });
       }
 
@@ -709,21 +708,13 @@ exports.sellGold = async (req, res, next) => {
 
       if (response.status === 200) {
         const id = response.data.result.data.uniqueId;
-        const newSell = new Sell(response.data.result.data);
-        await newSell.save();
-        const user = await User.findById(id).exec();
-        const newAmount = (
-          parseFloat(user.totalAmount) -
-          parseFloat(response.data.result.data.preTaxAmount)
-        ).toFixed(2);
+        await Sell.create(response.data.result.data);
 
         await User.findByIdAndUpdate(id, {
-          totalAmount: newAmount,
           goldBalance: response.data.result.data.goldBalance,
-        });
+        }).exec();
 
         return res.status(200).json({
-          totalAmount: newAmount,
           goldBalance: response.data.result.data.goldBalance,
         });
       }
@@ -782,7 +773,7 @@ exports.bankCreate = async (req, res, next) => {
           $push: { userBanks: response.data.result.data },
         };
 
-        await User.findOneAndUpdate({ _id: id }, update);
+        await User.findOneAndUpdate({ _id: id }, update).exec();
 
         return res.status(200).json({
           userBankId: response.data.result.data.userBankId,
@@ -862,7 +853,7 @@ exports.createAddress = async (req, res, next) => {
             },
           },
           { new: true }
-        );
+        ).exec();
 
         return res
           .status(200)

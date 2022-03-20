@@ -55,7 +55,6 @@ exports.getBalanceDetails = async (req, res, next) => {
       }
 
       res.status(200).json({
-        totalAmount: user.totalAmount,
         goldBalance: user.goldBalance,
       });
     });

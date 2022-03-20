@@ -24,14 +24,6 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  date: {
-    type: Date,
-    default: Date.now,
-  },
-  totalAmount: {
-    type: String,
-    default: "0.00",
-  },
   goldBalance: {
     type: String,
     default: "0.00",
@@ -83,6 +75,6 @@ const userSchema = new mongoose.Schema({
       pincode: { type: String },
     },
   ],
-});
+}, { timestamps: true });
 
 module.exports = mongoose.model("User", userSchema);
