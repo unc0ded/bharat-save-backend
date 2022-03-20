@@ -1,33 +1,17 @@
 const mongoose = require("mongoose");
 
 const buySchema = new mongoose.Schema({
-  quantity: { type: String },
-  totalAmount: { type: String },
-  preTaxAmount: { type: String },
-  metalType: { type: String },
-  rate: { type: String },
-  uniqueId: { type: String },
-  transactionId: { type: String },
-  userName: { type: String },
-  merchantTransactionId: { type: String },
-  mobileNumber: { type: String },
-  goldBalance: { type: String },
-  silverBalance: { type: String },
-  taxes: {
-    totalTaxAmount: { type: String },
-    taxSplit: [
-      {
-        type: { type: String },
-        taxPerc: { type: String },
-        taxAmount: { type: String },
-      },
-    ],
-  },
-  invoiceNumber: { type: String },
-  date: {
-    type: Date,
-    default: Date.now,
-  },
-});
+  quantity: String,
+  totalAmount: String,
+  metalType: String,
+  rate: String,
+  uniqueId: String,
+  transactionId: String,
+  userName: String,
+  merchantTransactionId: String,
+  invoiceNumber: String
+}, { timestamps: true });
 
-module.exports = mongoose.model("Buy", buySchema);
+const Buy = mongoose.model("Buy", buySchema);
+
+module.exports = Buy;

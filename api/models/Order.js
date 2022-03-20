@@ -1,21 +1,14 @@
 const mongoose = require('mongoose');
 
 const orderSchema = new mongoose.Schema({
-    orderId: {
-        type: String,
-        required: true
-    },
-    uniqueId: {
-        type: String,
-        required: true
-    },
-    merchantTransactionId: {
-        type: String,
-        required: true
-    },
-    productName: { type: String },
-    shippingAddressId: { type: String },
-    shippingCharges: { type: String }
+    metalType: String,
+    quantity: String,
+    orderId: String,
+    uniqueId: String,
+    merchantTransactionId: String,
+    productName: String,
+    shippingAddressId: String,
+    shippingCharges: String
 }, { timestamps: true });
 
 const Order = mongoose.model('Order', orderSchema);

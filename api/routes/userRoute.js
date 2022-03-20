@@ -5,6 +5,8 @@ router.get('/', controller.getUserDetails);
 
 router.get('/balance', controller.getBalanceDetails);
 
+router.get('/transactions', controller.getTransactions);
+
 router.get('/bankDetails', controller.getBankDetails);
 
 router.get('/addresses', controller.getAddresses);

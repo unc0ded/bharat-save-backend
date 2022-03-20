@@ -141,15 +141,11 @@ exports.productList = async (req, res, next) => {
       const response = await axios.get(
         `${process.env.AUGMONT_URL}/merchant/v1/products`,
         {
-          params: {
-            count: 30,
-            page: 1,
-          },
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
-          },
+          }
         }
       );
 
@@ -197,15 +193,11 @@ exports.productList = async (req, res, next) => {
       const response = await axios.get(
         `${process.env.AUGMONT_URL}/merchant/v1/products`,
         {
-          params: {
-            count: 30,
-            page: 1,
-          },
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
-          },
+          }
         }
       );
 
@@ -366,6 +358,8 @@ exports.orderProduct = async (req, res, next) => {
           merchantTransactionId:
             response.data.result.data.merchantTransactionId,
           orderId: response.data.result.data.orderId,
+          quantity: availabilityCheckResponse.data.result.data.productWeight,
+          metalType: availabilityCheckResponse.data.result.data.metalType,
           shippingCharges: response.data.result.data.shippingCharges,
           productName,
           shippingAddressId: req.body.addressId,
