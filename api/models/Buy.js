@@ -1,6 +1,11 @@
 const mongoose = require("mongoose");
 
 const buySchema = new mongoose.Schema({
+  txnType: {
+    type: String,
+    required: false,
+    default: "BUY"
+  },
   quantity: String,
   totalAmount: String,
   metalType: String,

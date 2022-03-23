@@ -1,6 +1,11 @@
 const mongoose = require('mongoose');
 
 const orderSchema = new mongoose.Schema({
+    txnType: {
+        type: String,
+        required: false,
+        default: "REDEEM",
+    },
     metalType: String,
     quantity: String,
     orderId: String,

@@ -1,6 +1,11 @@
 const mongoose = require("mongoose");
 
 const sellSchema = new mongoose.Schema({
+  txnType: {
+    type: String,
+    required: false,
+    default: "SELL"
+  },
   quantity: String,
   totalAmount: String,
   metalType: String,
@@ -9,11 +14,7 @@ const sellSchema = new mongoose.Schema({
   transactionId: String,
   userName: String,
   merchantTransactionId: String,
-  bankInfo: {
-    accountName: String,
-    accountNumber: String,
-    ifscCode: String,
-  }
+  bankId: String
 }, { timestamps: true });
 
 const Sell = mongoose.model("Sell", sellSchema);
