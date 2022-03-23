@@ -702,7 +702,8 @@ exports.sellGold = async (req, res, next) => {
 
       if (response.status === 200) {
         const id = response.data.result.data.uniqueId;
-        await Sell.create(response.data.result.data);
+        const { bankInfo, ...sellObj } = response.data.result.data;
+        await Sell.create({ bankId: req.body.userBankId, ...sellObj });
 
         await User.findByIdAndUpdate(id, {
           goldBalance: response.data.result.data.goldBalance,
