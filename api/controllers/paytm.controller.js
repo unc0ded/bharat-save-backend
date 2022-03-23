@@ -23,7 +23,7 @@ exports.initiateTransaction = async (req, res, next) => {
                 mid: process.env.PAYTM_MID,
                 websiteName: "WEBSTAGING",
                 orderId,
-                callbackUrl: `${process.env.PAYTM_URL}/theia/paytmCallback?ORDERID=${orderId}`,
+                callbackUrl: `${process.env.PAYTM_URL}/theia/paytmCallback?ORDER_ID=${orderId}`,
                 txnAmount: {
                     value: req.body.amount,
                     currency: "INR"
@@ -106,6 +106,7 @@ exports.checkTransactionStatus = async (req, res, next) => {
                     throw new Error('Checksum mismatch');
                 }
             } else {
+                console.log(response.data.body);
                 res.status(500).json({
                     error: response.data.body.resultInfo.resultMsg
                 });
@@ -154,7 +155,7 @@ exports.createSubscription = async (req, res, next) => {
                 mid: process.env.PAYTM_MID,
                 websiteName: 'WEBSTAGING',
                 orderId,
-                callbackUrl: `${process.env.PAYTM_URL}/theia/paytmCallback?ORDERID=${orderId}`,
+                callbackUrl: `${process.env.PAYTM_URL}/theia/paytmCallback?ORDER_ID=${orderId}`,
                 subscriptionAmountType: planTypeMap[req.body.planName].type,
                 subscriptionFrequencyUnit: planTypeMap[req.body.planName].unit,
                 subscriptionFrequency: '1',
