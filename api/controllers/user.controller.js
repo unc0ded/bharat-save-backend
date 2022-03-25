@@ -28,7 +28,8 @@ exports.getUserDetails = async (req, res, next) => {
       res.status(200).json({
         userName: user.userName,
         emailId: user.emailId,
-        mobileNumber: user.mobileNumber
+        mobileNumber: user.mobileNumber,
+        userPincode: user.userPincode
       });
     });
   } catch (error) {
