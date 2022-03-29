@@ -444,6 +444,7 @@ exports.createUser = async (req, res, next) => {
           mobileNumber: user.mobileNumber,
           emailId: user.emailId,
           userName: user.userName,
+          userPincode: user.userPincode
         },
       });
     }
@@ -482,6 +483,7 @@ exports.login = async (req, res, next) => {
         mobileNumber: user.mobileNumber,
         emailId: user.emailId,
         userName: user.userName,
+        userPincode: user.userPincode
       },
     });
   } catch (error) {

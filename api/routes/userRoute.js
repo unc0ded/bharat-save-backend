@@ -3,6 +3,8 @@ const controller = require('../controllers/user.controller');
 
 router.get('/', controller.getUserDetails);
 
+router.put('/', controller.saveUserDetails);
+
 router.get('/balance', controller.getBalanceDetails);
 
 router.get('/transactions', controller.getTransactions);
