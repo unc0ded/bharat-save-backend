@@ -9,34 +9,6 @@ const qs = require("qs");
 const Sell = require("../models/Sell");
 const Order = require("../models/Order");
 
-const token =
-  "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIzIiwianRpIjoiY2I4YzM0YzA4ZWNmZDU5ZTIxM2FmOTRlOWE4NjMxZTZjNzFjNjNiMDQ3NTg2NDYzYjdmMTJiZThlNDk3MDc4OThmOGFlZTI2ODFiNGRkN2UiLCJpYXQiOjE2NDc3Njc1OTgsIm5iZiI6MTY0Nzc2NzU5OCwiZXhwIjoxNjUwMzU5NTk4LCJzdWIiOiI1MDAwMDE0NSIsInNjb3BlcyI6W119.dloDUN_gedYW-1Bj7MM5a2XmG6ffIxJC6n3PeLd1a7m9f5nuACSHnSIv6COlWQgT5B4iYt9l02u7LmzDxc4ZV-L6VJhGVSOIyCPJlFw_gQmWosd2myhGt_ZzdBwsh9QzI6mjab1WceZoUV5eUSKVIRgz9nclpEgOELTbLQd2tzpT20SjpPScjAtfkeoYy1mAXLxL7dOvgp8xYJ1gBgyhHw92U8_OVzhM6VcSJk67P2IbqdhTMTNPazarqEywZrUvjgerFfblRk-RTRVaXTp6SzyGdKgFf1jAt__c6MbNHZGWj7rpIq2npWH0AuAUk0XNf9g2edidRabNRlWBXN05mfVJSzAqJxm10IGWNjnxQXx0tzZzjjpHq9UdysMCZvdxYefsP7nUu64gByQ456R49YdRKoAbMnLS7XiPAbDNBTBTaRKhdcIr_liimAyh6P-QErIdUPj5SW1CLKEjWe-nTwBFLndEqCfr4Em9S5aNKAODHxlTwwqkyXxVXdaa6YPVE_K9HdnEsmvWCqQfMpxOQT3SLENKY37YSJiMV_K_lOx7EaIUHkI2ZW9f37-q7IdujhdTKDg52Wk3mQvOSC6b8afK6QZXHU_jwpBPatz2XTU_YNjP9ojeo9REv1ozS6LYlhPXgYVbONlkzPbFtu36JQ-I-6tBu3prCyCyelcpgWw";
-exports.augmontToken = token;
-// var data = new FormData();
-// data.append("email", "devansh299@gmail.com");
-// data.append("password", "FsKaH@12$3Kl#");
-
-// var config = {
-//   method: "post",
-//   url: "https://uat-api.augmontgold.com/api/merchant/v1/auth/login",
-//   headers: {
-//     "Content-Type": "application/json",
-//     Accept: "application/json",
-//     ...data.getHeaders(),
-//   },
-//   data: data
-// };
-
-// axios(config)
-//   .then(function (response) {
-//     console.log(response.data);
-//   })
-//   .catch(function (error) {
-//     console.log(error);
-//   });
-
-//sanskar's uniquecode =e505e888-ca94-429f-a2e9-52b97b93191f
-
 exports.buyList = async (req, res, next) => {
   const authHeader = req.headers.authorization;
 
@@ -60,7 +32,7 @@ exports.buyList = async (req, res, next) => {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${process.env.augmontToken}`,
           },
         }
       );
@@ -108,7 +80,7 @@ exports.sellList = async (req, res, next) => {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${process.env.augmontToken}`,
           },
         }
       );
@@ -144,7 +116,7 @@ exports.productList = async (req, res, next) => {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${process.env.augmontToken}`,
           }
         }
       );
@@ -196,7 +168,7 @@ exports.productList = async (req, res, next) => {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${process.env.augmontToken}`,
           }
         }
       );
@@ -308,7 +280,7 @@ exports.orderProduct = async (req, res, next) => {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${process.env.augmontToken}`,
           },
           validateStatus: (status) => status < 500,
         }
@@ -345,7 +317,7 @@ exports.orderProduct = async (req, res, next) => {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${process.env.augmontToken}`,
             ...formData.getHeaders(),
           },
           validateStatus: (status) => status < 500,
@@ -416,7 +388,7 @@ exports.createUser = async (req, res, next) => {
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${process.env.augmontToken}`,
           ...data.getHeaders(),
         },
         data: data,
@@ -521,7 +493,7 @@ exports.goldRate = async (req, res, next) => {
       `${process.env.AUGMONT_URL}/merchant/v1/rates`,
       {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${process.env.augmontToken}`,
           Accept: "application/json",
           "Content-Type": "application/json",
         },
@@ -595,7 +567,7 @@ exports.buyGold = async (req, res, next) => {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${process.env.augmontToken}`,
             ...data.getHeaders(),
           },
           validateStatus: (status) => status < 500,
@@ -695,7 +667,7 @@ exports.sellGold = async (req, res, next) => {
           headers: {
             "Content-Type": "application/json",
             Accept: "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${process.env.augmontToken}`,
             ...data.getHeaders(),
           },
           validateStatus: (status) => status < 500,
@@ -757,7 +729,7 @@ exports.bankCreate = async (req, res, next) => {
         }),
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${process.env.augmontToken}`,
             "Content-Type": "application/x-www-form-urlencoded",
           },
           validateStatus: (status) => status < 500,
@@ -824,7 +796,7 @@ exports.createAddress = async (req, res, next) => {
         }),
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${process.env.augmontToken}`,
             "Content-Type": "application/x-www-form-urlencoded",
           },
           validateStatus: (status) => status < 500,

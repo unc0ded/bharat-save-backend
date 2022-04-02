@@ -10,6 +10,8 @@ const augmontRoutes = require("./api/routes/augmontRoute");
 const userRoutes = require("./api/routes/userRoute");
 const receiveMsgs = require("./Whatsapp/receiveMessages");
 const paytmRoutes = require("./api/routes/paytmRoute");
+const Bree = require("bree");
+const { SHARE_ENV } = require("worker_threads");
 
 dotenv.config();
 
@@ -21,6 +23,23 @@ dotenv.config();
 
 // require db
 require("./config/mongoose.js");
+
+const bree = new Bree({
+  jobs: [
+    {
+      name: "auth",
+      interval: "25d",
+      timeout: 0
+    }
+  ],
+  worker: {
+    env: SHARE_ENV
+  }
+});
+
+bree.start();
+
+// require("./jobs/auth.js");
 
 const app = express();
 

@@ -86,7 +86,7 @@ exports.saveUserDetails = async (req, res, next) => {
         {
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
-            Authorization: `Bearer ${token}`
+            Authorization: `Bearer ${process.env.augmontToken}`
           },
           validateStatus: status => status < 500
         }
