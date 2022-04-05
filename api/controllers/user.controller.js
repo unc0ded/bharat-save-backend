@@ -30,7 +30,9 @@ exports.getUserDetails = async (req, res, next) => {
         userName: user.userName,
         emailId: user.emailId,
         mobileNumber: user.mobileNumber,
-        userPincode: user.userPincode
+        userPincode: user.userPincode,
+        goldBalance: user.goldBalance,
+        referralCode: user.referralCode
       });
     });
   } catch (error) {

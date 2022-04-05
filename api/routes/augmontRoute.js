@@ -7,7 +7,8 @@ router.post("/createuser", controller.createUser);
 //create user
 router.post("/login", controller.login);
 //POST create user bank request
-router.post("/userbankcreate", controller.bankCreate);
+router.post("/bank", controller.bankCreate);
+router.put("/bank", controller.editBankDetail);
 //GET gold rate(incl. tax)
 router.get("/goldrate", controller.goldRate);
 //POST buy request

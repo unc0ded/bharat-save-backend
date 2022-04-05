@@ -1,7 +1,7 @@
 const User = require("../models/User");
 const Agent = require("../../agentAPI/models/Agent");
 const axios = require("axios").default;
-const { nanoid } = require("nanoid");
+const { nanoid } = require("nanoid/async");
 const FormData = require("form-data");
 const jwt = require("jsonwebtoken");
 const Buy = require("../models/Buy");
@@ -266,7 +266,7 @@ exports.orderProduct = async (req, res, next) => {
     }
 
     const id = decoded._id;
-    const merchantTransactionId = nanoid();
+    const merchantTransactionId = await nanoid();
 
     try {
       const user = await User.findById(id).exec();
@@ -373,7 +373,18 @@ exports.createUser = async (req, res, next) => {
       return res.sendStatus(500); // user already exists
     }
 
-    const uniqueId = nanoid();
+    let referralUser;
+    if (req.body.referralCode) {
+      referralUser = await User.findOne({
+        referralCode: req.body.referralCode
+      }).exec();
+
+      if (!referralUser) {
+        return res.status(500).send('Invalid referral code');
+      }
+    }
+
+    const uniqueId = await nanoid();
 
     const data = new FormData();
     data.append("mobileNumber", req.body.mobileNumber);
@@ -384,25 +395,30 @@ exports.createUser = async (req, res, next) => {
 
     const response = await axios.post(
       `${process.env.AUGMONT_URL}/merchant/v1/users`,
+      data,
       {
         headers: {
           Accept: "application/json",
-          "Content-Type": "application/json",
           Authorization: `Bearer ${process.env.augmontToken}`,
           ...data.getHeaders(),
         },
-        data: data,
+        validateStatus: (status) => status < 500
       }
     );
 
-    if (response.status === 200) {
+    if (response.status === 201) {
+      if (referralUser) {
+        // TODO : credit gold to both users and notify referral user
+      }
+
+      const referralCode = await nanoid(8);
       const user = await User.create({
         _id: uniqueId,
         mobileNumber: req.body.mobileNumber,
         emailId: req.body.emailId,
         userName: req.body.userName,
         userPincode: req.body.userPincode,
-        referralCode: req.body.referralCode,
+        referralCode
       });
 
       const token = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET, {
@@ -455,7 +471,9 @@ exports.login = async (req, res, next) => {
         mobileNumber: user.mobileNumber,
         emailId: user.emailId,
         userName: user.userName,
-        userPincode: user.userPincode
+        userPincode: user.userPincode,
+        goldBalance: user.goldBalance,
+        referralCode: user.referralCode
       },
     });
   } catch (error) {
@@ -500,6 +518,9 @@ exports.goldRate = async (req, res, next) => {
       }
     );
 
+    console.log(await nanoid());
+    console.log(process.env.augmontToken);
+
     if (response.status === 200) {
       const buyPrice = response.data.result.data.rates.gBuy;
       const buyGst = response.data.result.data.rates.gBuyGst;
@@ -516,7 +537,7 @@ exports.goldRate = async (req, res, next) => {
     res.sendStatus(500);
   } catch (error) {
     console.log(error);
-    next();
+    next(error);
   }
 };
 
@@ -541,7 +562,7 @@ exports.buyGold = async (req, res, next) => {
     }
 
     const uniqueId = user._id;
-    const merchantTransactionId = nanoid();
+    const merchantTransactionId = await nanoid();
     try {
       const data = new FormData();
       data.append("lockPrice", req.body.buyPrice);
@@ -639,7 +660,7 @@ exports.sellGold = async (req, res, next) => {
     }
 
     const uniqueId = user._id;
-    const merchantTransactionId = nanoid();
+    const merchantTransactionId = await nanoid();
     try {
       const data = new FormData();
       data.append("uniqueId", uniqueId);
@@ -762,6 +783,79 @@ exports.bankCreate = async (req, res, next) => {
       res.status(400).json({
         "error(s)": errors,
       });
+    } catch (error) {
+      console.log(error);
+      next(error);
+    }
+  });
+};
+
+exports.editBankDetail = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader) {
+    return res.sendStatus(401);
+  }
+
+  const userToken = authHeader.split(" ")[1];
+
+  jwt.verify(userToken, process.env.TOKEN_SECRET, async (err, decoded) => {
+    if (err) {
+      return res.sendStatus(403);
+    }
+
+    const uniqueId = decoded._id;
+
+    if (!req.body.userBankId) {
+      return res.status(400).json({
+        error: "userBankId is required",
+      });
+    }
+
+    const user = await User.findOne({
+      _id: uniqueId,
+      "userBanks.userBankId": req.body.userBankId
+    }).exec();
+
+    if (!user) {
+      return res.status(400).json({
+        error: "invalid bank id"
+      });
+    }
+
+    try {
+      const response = await axios.put(
+        `${process.env.AUGMONT_URL}/merchant/v1/users/${uniqueId}/banks/${req.body.userBankId}`,
+        qs.stringify({
+          accountNumber: req.body.accountNumber,
+          accountName: req.body.accountName,
+          ifscCode: req.body.ifscCode
+        }),
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.augmontToken}`,
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          validateStatus: (status) => status < 500,
+        }
+      );
+
+      if (response.status == 200) {
+        const index = user.userBanks.findIndex(bank => bank.userBankId === req.body.userBankId);
+        user.userBanks[index] = response.data.result.data;
+        await user.save();
+
+        return res.status(200).json({
+          userBankId: response.data.result.data.userBankId,
+          uniqueId: response.data.result.data.uniqueId,
+          accountNumber: response.data.result.data.accountNumber,
+          accountName: response.data.result.data.accountName,
+          ifscCode: response.data.result.data.ifscCode,
+        });
+      }
+
+      console.log(response.data); // for debugging
+      res.sendStatus(500);
     } catch (error) {
       console.log(error);
       next(error);
