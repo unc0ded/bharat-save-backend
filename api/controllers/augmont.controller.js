@@ -806,7 +806,7 @@ exports.editBankDetail = async (req, res, next) => {
 
     const uniqueId = decoded._id;
 
-    if (!req.body.userBankId) {
+    if (!req.params.userBankId) {
       return res.status(400).json({
         error: "userBankId is required",
       });
@@ -814,7 +814,7 @@ exports.editBankDetail = async (req, res, next) => {
 
     const user = await User.findOne({
       _id: uniqueId,
-      "userBanks.userBankId": req.body.userBankId
+      "userBanks.userBankId": req.params.userBankId
     }).exec();
 
     if (!user) {
@@ -825,7 +825,7 @@ exports.editBankDetail = async (req, res, next) => {
 
     try {
       const response = await axios.put(
-        `${process.env.AUGMONT_URL}/merchant/v1/users/${uniqueId}/banks/${req.body.userBankId}`,
+        `${process.env.AUGMONT_URL}/merchant/v1/users/${uniqueId}/banks/${req.params.userBankId}`,
         qs.stringify({
           accountNumber: req.body.accountNumber,
           accountName: req.body.accountName,
@@ -852,6 +852,68 @@ exports.editBankDetail = async (req, res, next) => {
           accountName: response.data.result.data.accountName,
           ifscCode: response.data.result.data.ifscCode,
         });
+      }
+
+      console.log(response.data); // for debugging
+      res.sendStatus(500);
+    } catch (error) {
+      console.log(error);
+      next(error);
+    }
+  });
+};
+
+exports.deleteBank = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader) {
+    return res.sendStatus(401);
+  }
+
+  const userToken = authHeader.split(" ")[1];
+
+  jwt.verify(userToken, process.env.TOKEN_SECRET, async (err, decoded) => {
+    if (err) {
+      return res.sendStatus(403);
+    }
+
+    const uniqueId = decoded._id;
+
+    if (!req.params.userBankId) {
+      return res.status(400).json({
+        error: "userBankId is required"
+      });
+    }
+
+    const user = await User.findOne({
+      _id: uniqueId,
+      "userBanks.userBankId": req.params.userBankId
+    }).exec();
+
+    if (!user) {
+      return res.status(400).json({
+        error: "invalid bank id"
+      });
+    }
+
+    try {
+      const response = await axios.delete(
+        `${process.env.AUGMONT_URL}/merchant/v1/users/${uniqueId}/banks/${req.params.userBankId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.augmontToken}`,
+            Accept: "application/json",
+          },
+          validateStatus: (status) => status < 500
+        }
+      );
+
+      if (response.status == 200) {
+        const index = user.userBanks.findIndex(bank => bank.userBankId === req.params.userBankId);
+        user.userBanks.splice(index, 1);
+        await user.save();
+
+        return res.sendStatus(200);
       }
 
       console.log(response.data); // for debugging

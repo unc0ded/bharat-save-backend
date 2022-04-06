@@ -169,7 +169,7 @@ exports.createSubscription = async (req, res, next) => {
                 autoRenewal: true,
                 autoRetry: true,
                 txnAmount: {
-                    value: "1.00",
+                    value: req.body.amount,
                     currency: "INR"
                 },
                 userInfo: {
