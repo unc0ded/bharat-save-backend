@@ -601,6 +601,7 @@ exports.buyGold = async (req, res, next) => {
         const user = await User.findById(id).exec();
 
         if (user.referralId) {
+          console.log(user.referralId);
           // TODO make changes here
           const agent = await Agent.findOne({
             referralCode: user.referralCode,
