@@ -407,12 +407,8 @@ exports.createUser = async (req, res, next) => {
     );
 
     if (response.status === 201) {
-      if (referralUser) {
-        // TODO : credit gold to both users and notify referral user
-      }
-
       const referralCode = await nanoid(8);
-      const user = await User.create({
+      const newUser = new User({
         _id: uniqueId,
         mobileNumber: req.body.mobileNumber,
         emailId: req.body.emailId,
@@ -420,6 +416,13 @@ exports.createUser = async (req, res, next) => {
         userPincode: req.body.userPincode,
         referralCode
       });
+
+      if (referralUser) {
+        // TODO : credit gold to both users and notify referral user
+        newUser.referralId = referralUser._id;
+      }
+
+      const user = await newUser.save();
 
       const token = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET, {
         expiresIn: "7d",
@@ -518,9 +521,6 @@ exports.goldRate = async (req, res, next) => {
       }
     );
 
-    console.log(await nanoid());
-    console.log(process.env.augmontToken);
-
     if (response.status === 200) {
       const buyPrice = response.data.result.data.rates.gBuy;
       const buyGst = response.data.result.data.rates.gBuyGst;
@@ -600,7 +600,8 @@ exports.buyGold = async (req, res, next) => {
         await Buy.create(response.data.result.data);
         const user = await User.findById(id).exec();
 
-        if (user.referralCode) {
+        if (user.referralId) {
+          // TODO make changes here
           const agent = await Agent.findOne({
             referralCode: user.referralCode,
           }).exec();
@@ -854,7 +855,7 @@ exports.editBankDetail = async (req, res, next) => {
         });
       }
 
-      console.log(response.data); // for debugging
+      //console.log(response.data); // for debugging
       res.sendStatus(500);
     } catch (error) {
       console.log(error);
@@ -916,7 +917,7 @@ exports.deleteBank = async (req, res, next) => {
         return res.sendStatus(200);
       }
 
-      console.log(response.data); // for debugging
+      //console.log(response.data); // for debugging
       res.sendStatus(500);
     } catch (error) {
       console.log(error);

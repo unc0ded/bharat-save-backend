@@ -12,6 +12,9 @@ const userSchema = new mongoose.Schema({
   referralCode: {
     type: String,
   },
+  referralId: {
+    type: String
+  },
   emailId: {
     type: String,
     required: true,
@@ -43,6 +46,9 @@ const userSchema = new mongoose.Schema({
           "Monthly Savings",
         ],
         required: true,
+      },
+      amount: {
+        type: String
       },
       active: {
         type: Boolean,

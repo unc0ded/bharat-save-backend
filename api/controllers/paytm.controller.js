@@ -106,7 +106,7 @@ exports.checkTransactionStatus = async (req, res, next) => {
                     throw new Error('Checksum mismatch');
                 }
             } else {
-                console.log(response.data.body);
+                //console.log(response.data.body);
                 res.status(500).json({
                     error: response.data.body.resultInfo.resultMsg
                 });
@@ -204,7 +204,8 @@ exports.createSubscription = async (req, res, next) => {
                     const updatedPlans = userDoc.activePlans.filter(plan => plan.planName !== req.body.planName);
                     updatedPlans.push({
                         planName: req.body.planName,
-                        subscriptionId: response.data.body.subscriptionId
+                        subscriptionId: response.data.body.subscriptionId,
+                        amount: req.body.amount
                     });
                     userDoc.activePlans = updatedPlans;
                     await userDoc.save();
@@ -212,7 +213,8 @@ exports.createSubscription = async (req, res, next) => {
                         orderId,
                         mid: process.env.PAYTM_MID,
                         subscriptionId: response.data.body.subscriptionId,
-                        token: response.data.body.txnToken
+                        token: response.data.body.txnToken,
+                        amount: req.body.amount
                     });
                 } else {
                     throw new Error('Checksum mismatch');
@@ -324,6 +326,7 @@ exports.checkSubscriptionStatus = async (req, res, next) => {
                         frequencyUnit: response.data.body.frequencyUnit,
                         frequency: response.data.body.frequency,
                         expiryDate: response.data.body.expiryDate,
+                        maxAmount: response.data.body.maxAmount,
                         custId: response.data.body.custId,
                         lastOrderId: response.data.body.lastOrderId,
                         lastOrderStatus: response.data.body.lastOrderStatus,
